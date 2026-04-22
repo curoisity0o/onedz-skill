@@ -2,7 +2,7 @@
 
 [English](#english) | **中文**
 
-一个基于 [OneDZ 全球碎屑锆石数据库](https://github.com/KeranLi/Global-Detrital-Zircon) 二次开发的 Claude Code 技能包，由开源社区爱好者独立开发，**非** OneDZ 原作者团队作品。
+一个基于 [OneDZ 全球碎屑锆石数据库](https://github.com/KeranLi/Global-Detrital-Zircon) (.csv 格式) 二次开发的 Claude Code 技能包，由 **zhangrongyu** 独立开发，**非** OneDZ 原作者团队作品。
 
 > **数据来源**: Li, K., Hu, X., Chai, R., Yang, J. et al. (2025): OneDZ: A Global Detrital Zircon Database and Implications for Constructing Giant Geoscience Database, *Earth Syst. Sci. Data Discuss.* [preprint], https://doi.org/10.5194/essd-2025-157, in review, 2025.
 >
@@ -14,7 +14,7 @@
 
 ## 这是什么
 
-本技能包将 OneDZ 数据库（192 万条 U-Pb 记录、27 万条 Lu-Hf 记录）封装为 Claude Code Skill，让用户可以通过自然语言指令完成锆石地质分析。
+本技能包将 OneDZ 数据库的 **.csv 格式**数据（192 万条 U-Pb 记录、27 万条 Lu-Hf 记录）封装为 Claude Code Skill，让用户可以通过自然语言指令完成锆石地质分析。
 
 **使用示例:**
 ```
@@ -35,17 +35,19 @@
 
 ## 声明
 
-- 本项目是**第三方开源社区作品**，由爱好者基于 OneDZ 数据库独立开发
+- 本项目由 **zhangrongyu** 基于 OneDZ 数据库独立开发，与原作者团队无隶属关系
 - OneDZ 数据库的版权归 Li et al. (2025) 原作者团队所有
-- 本技能包中的分析代码、示例模板、文档等为本项目原创
+- 本技能包中的分析代码、示例模板、文档等为 **zhangrongyu** 原创
 - 如有问题或建议，请在本仓库提交 Issue，**非** OneDZ 官方支持
 
 ## 数据集
 
-| 表 | 记录数 | 列数 | 大小 |
-|----|--------|------|------|
-| U-Pb | ~192 万 | 72 | ~1.2 GB |
-| Lu-Hf | ~27 万 | 86 | ~164 MB |
+本技能包使用 OneDZ 数据库的 **.csv 格式**数据文件（`zircon_upb.csv`、`zircon_luhf.csv`）。
+
+| 文件 | 记录数 | 列数 | 大小 |
+|------|--------|------|------|
+| zircon_upb.csv | ~192 万 | 72 | ~1.2 GB |
+| zircon_luhf.csv | ~27 万 | 86 | ~164 MB |
 
 **下载:** https://onedz.top/DownloadPage.html 或 https://zenodo.org/records/17407937
 
@@ -152,7 +154,7 @@ export ONEDZ_DATA_PATH="/path/to/onedz_csv/"
 
 ## 许可
 
-本技能包代码由开源社区爱好者开发，仅供研究使用。OneDZ 数据库版权归 Li et al. (2025) 原作者团队所有，使用请遵守其许可条款。
+本技能包由 **zhangrongyu** 开发，仅供研究使用。OneDZ 数据库（.csv 格式）版权归 Li et al. (2025) 原作者团队所有，使用请遵守其许可条款。
 
 ---
 
@@ -162,7 +164,7 @@ export ONEDZ_DATA_PATH="/path/to/onedz_csv/"
 
 **English** | [中文](#)
 
-A third-party Claude Code skill built on top of the [OneDZ global detrital zircon database](https://github.com/KeranLi/Global-Detrital-Zircon). Developed independently by an open-source community enthusiast — **not** affiliated with the OneDZ author team.
+A Claude Code skill built on top of the [OneDZ global detrital zircon database](https://github.com/KeranLi/Global-Detrital-Zircon) (.csv format). Developed independently by **zhangrongyu** — **not** affiliated with the OneDZ author team.
 
 > **Data source**: Li, K., Hu, X., Chai, R., Yang, J. et al. (2025): OneDZ: A Global Detrital Zircon Database and Implications for Constructing Giant Geoscience Database, *Earth Syst. Sci. Data Discuss.* [preprint], https://doi.org/10.5194/essd-2025-157, in review, 2025.
 >
@@ -174,7 +176,7 @@ A third-party Claude Code skill built on top of the [OneDZ global detrital zirco
 
 ## What It Does
 
-This skill wraps the OneDZ database (1.92M U-Pb records, 270K Lu-Hf records) into a Claude Code skill for natural-language zircon analysis.
+This skill wraps the OneDZ database's **.csv format** data (1.92M U-Pb records, 270K Lu-Hf records) into a Claude Code skill for natural-language zircon analysis.
 
 **Example commands:**
 ```
@@ -189,17 +191,19 @@ This skill wraps the OneDZ database (1.92M U-Pb records, 270K Lu-Hf records) int
 
 ## Disclaimer
 
-- This is a **third-party community project**, independently developed
+- This project is developed independently by **zhangrongyu**, not affiliated with the OneDZ author team
 - OneDZ database is copyrighted by Li et al. (2025)
-- Analysis code, templates, and documentation in this repo are original work
+- Analysis code, templates, and documentation in this repo are original work by **zhangrongyu**
 - For issues, open an Issue here — this is **not** official OneDZ support
 
 ## Dataset
 
-| Table | Records | Columns | Size |
-|-------|---------|---------|------|
-| U-Pb | ~1.92M | 72 | ~1.2 GB |
-| Lu-Hf | ~270K | 86 | ~164 MB |
+This skill uses the OneDZ database in **.csv format** (`zircon_upb.csv`, `zircon_luhf.csv`).
+
+| File | Records | Columns | Size |
+|------|---------|---------|------|
+| zircon_upb.csv | ~1.92M | 72 | ~1.2 GB |
+| zircon_luhf.csv | ~270K | 86 | ~164 MB |
 
 **Download:** https://onedz.top/DownloadPage.html or https://zenodo.org/records/17407937
 
@@ -275,4 +279,4 @@ export ONEDZ_DATA_PATH="/path/to/onedz_csv/"
 
 ## License
 
-This skill is developed by an open-source community enthusiast for research use. The OneDZ database is copyrighted by Li et al. (2025) — please follow their license terms.
+This skill is developed by **zhangrongyu** for research use. The OneDZ database (.csv format) is copyrighted by Li et al. (2025) — please follow their license terms.
