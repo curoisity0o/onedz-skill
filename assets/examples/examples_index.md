@@ -2,8 +2,8 @@
 
 > 💡 **AI 使用指南**: 当用户提出需求时，先查找此文件匹配最相关的 example，然后读取对应的 .py 文件参考实现。
 
-> **最后更新**: 2026-04-20
-> **版本**: 1.0.0
+> **最后更新**: 2026-04-22
+> **版本**: 1.1.0
 
 ---
 
@@ -13,6 +13,10 @@
 |-------------|-------------|--------|-----|---------|
 | 对比两个区域/国家的锆石数据 | `regional_comparison` | regional_comparison.py | ⭐⭐ | query, ks_test, plot_multi_kde |
 | K-S 统计检验 | `regional_comparison` | regional_comparison.py | ⭐⭐ | ks_test |
+| **按时期分组对比** | **`grouped_comparison`** | **grouped_comparison.py** | ⭐⭐⭐ | query, clean, analyze, ks_test, plot_multi_kde |
+| **按岩石类型分组对比** | **`grouped_comparison`** | **grouped_comparison.py** | ⭐⭐⭐ | grouped_comparison (改 GROUP_COLUMN) |
+| **按大洲分组对比** | **`grouped_comparison`** | **grouped_comparison.py** | ⭐⭐⭐ | grouped_comparison (不设 QUERY_PARAMS) |
+| **任意维度分组** | **`grouped_comparison`** | **grouped_comparison.py** | ⭐⭐⭐ | 改 GROUP_COLUMN + GROUP_VALUES |
 | 年龄分布 KDE 图 | `age_distribution` | age_distribution.py | ⭐⭐ | analyze, plot_age |
 | 峰值检测 | `age_distribution` | age_distribution.py | ⭐⭐ | analyze (peaks) |
 | 基础数据查询 | `basic_query` | basic_query.py | ⭐ | query, export |
@@ -20,6 +24,22 @@
 | Lu-Hf 同位素分析 | `luhf_analysis` | luhf_analysis.py | ⭐⭐⭐ | join_upb_luhf, compute_epsilon_hf |
 | εHf(t) 计算 | `luhf_analysis` | luhf_analysis.py | ⭐⭐⭐ | compute_epsilon_hf |
 | 地理分布图 | `age_distribution` | age_distribution.py | ⭐⭐ | plot_geographic_distribution |
+| 不确定查询参数是否有效 | **查 dataset JSON** | onedz_dataset_structure.json | - | - |
+
+---
+
+## 🔄 组合场景建议
+
+当用户需求不能直接匹配单个 Example 时，按以下方式组合：
+
+| 用户需求 | 主 Example | 修改方式 |
+|---------|-----------|---------|
+| "中国不同地质时期对比" | `grouped_comparison` | QUERY_PARAMS={country_state="China"}, GROUP_COLUMN="Depos.Age (Period)" |
+| "亚洲各国锆石对比" | `grouped_comparison` | QUERY_PARAMS={continent="Asia"}, GROUP_COLUMN="Country_State", GROUP_VALUES=None (自动检测) |
+| "全球火成岩 vs 沉积岩" | `grouped_comparison` | QUERY_PARAMS={}, GROUP_COLUMN="Class-1 Rock Type" |
+| "某区域白垩纪 vs 侏罗纪" | `regional_comparison` | 两次 query(periods=[...]) 分别查询 |
+| "某区域全面分析+Lu-Hf" | `age_distribution` + `luhf_analysis` | 先 age_distribution 做年龄分析，再 luhf_analysis 做 Hf 分析 |
+| "按年龄区间分段统计" | `grouped_comparison` | GROUP_COLUMN 换成用 age_range 分桶 |
 
 ---
 

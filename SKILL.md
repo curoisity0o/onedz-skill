@@ -134,6 +134,36 @@ assets/examples/examples_index.md
 
 ---
 
+### 🔍 步骤 1.5: 查询可用数据范围（不确定参数时使用）
+
+当不确定查询参数（国家名、时期名、岩石类型等）是否存在于数据集中时，读取 `assets/examples/onedz_dataset_structure.json`，**无需加载 1.5GB 数据**即可确认。
+
+| 想知道的 | 看 `quick_index` 的哪个字段 | 示例 |
+|---------|---------------------------|------|
+| 有哪些国家/地区 | `Country_State` (206个) | China, Australia, America... |
+| 有哪些大洲 | `Continent` (17个) | Asia, Europe, N_America... |
+| 有哪些地质时期 | `Depos.Age (Period)` (96个) | Cretaceous, Jurassic... |
+| 有哪些岩石类型 | `Class-1/2/3 Rock Type` | detrital, igneous... |
+| 有哪些仪器 | `Mass Spectrometer` (25个) | LA-ICP-MS, SHRIMP... |
+| 列的空值率 | `files.*.columns.*.null_count` | Best Age: 71.6% non-null |
+
+**典型用法**：
+
+```python
+# 用户问"印度锆石数据"——先确认"印度"在数据集中的确切名称
+import json
+with open("assets/examples/onedz_dataset_structure.json") as f:
+    ds = json.load(f)
+countries = ds["quick_index"]["Country_State"]["categories"]
+# 找到: "India" 存在 ✅
+
+# 用户问"南极洲"——检查数据量
+continent = ds["quick_index"]["Continent"]["categories"]
+# 找到: "Antarctica", "Antarctica shelves" — 数据量可能有限
+```
+
+---
+
 ### 📚 步骤 2: 查阅 API 文档（需要新 API 时）
 
 **如果 Example 中的 API 不够用**，按以下优先级查阅：
@@ -427,6 +457,7 @@ AI: 查 examples_index.md → regional_comparison
 - [ ] 配置 `OneDZConfig(output_dir=TASK_DIR, use_timestamp_output=False)`
 - [ ] viz 方法使用 `out()` 辅助函数传绝对路径
 - [ ] 查阅 `examples_index.md` 找到匹配的 Example
+- [ ] 不确定参数时查 `onedz_dataset_structure.json`（步骤 1.5）
 - [ ] 读取对应的 .py 文件
 - [ ] 确认使用 `OneDZHandler` API（不直接操作 polars）
 - [ ] 添加数据验证（检查 `df.height > 0`）
