@@ -2,7 +2,7 @@
 
 [English](#english) | **中文**
 
-一个基于 [OneDZ 全球碎屑锆石数据库](https://github.com/KeranLi/Global-Detrital-Zircon) (.csv 格式) 二次开发的 Claude Code 技能包，由 **zhangrongyu** 独立开发，**非** OneDZ 原作者团队作品。
+一个基于 [OneDZ 全球碎屑锆石数据库](https://github.com/KeranLi/Global-Detrital-Zircon) (.csv 格式) 二次开发的 Claude Code 技能包，由 **Zhangry** 开发。
 
 > **数据来源**: Li, K., Hu, X., Chai, R., Yang, J. et al. (2025): OneDZ: A Global Detrital Zircon Database and Implications for Constructing Giant Geoscience Database, *Earth Syst. Sci. Data Discuss.* [preprint], https://doi.org/10.5194/essd-2025-157, in review, 2025.
 >
@@ -14,7 +14,7 @@
 
 ## 这是什么
 
-本技能包将 OneDZ 数据库的 **.csv 格式**数据（192 万条 U-Pb 记录、27 万条 Lu-Hf 记录）封装为 Claude Code Skill，让用户可以通过自然语言指令完成锆石地质分析。
+本技能包将 OneDZ 数据库的 **.csv 格式**数据（192 万条 U-Pb 记录、27 万条 Lu-Hf 记录）封装为 Claude Code Skill，让用户可以通过自然语言指令完成锆石地质分析,使用此技能需要单独下载数据集，如果有需求可以使用其中的 `/scripts/fix_dataset.py` 脚本进行一遍数据集的错误格式修正。
 
 **使用示例:**
 ```
@@ -35,9 +35,8 @@
 
 ## 声明
 
-- 本项目由 **zhangrongyu** 基于 OneDZ 数据库独立开发，与原作者团队无隶属关系
+- 本项目由 **Zhangry** 基于 OneDZ 数据库独立开发
 - OneDZ 数据库的版权归 Li et al. (2025) 原作者团队所有
-- 本技能包中的分析代码、示例模板、文档等为 **zhangrongyu** 原创
 - 如有问题或建议，请在本仓库提交 Issue，**非** OneDZ 官方支持
 
 ## 数据集
@@ -154,7 +153,7 @@ export ONEDZ_DATA_PATH="/path/to/onedz_csv/"
 
 ## 许可
 
-本技能包由 **zhangrongyu** 开发，仅供研究使用。OneDZ 数据库（.csv 格式）版权归 Li et al. (2025) 原作者团队所有，使用请遵守其许可条款。
+本技能包由 **Zhangry** 开发，仅供研究使用。OneDZ 数据库（.csv 格式）版权归 Li et al. (2025) 原作者团队所有，使用请遵守其许可条款。
 
 ---
 
@@ -164,7 +163,7 @@ export ONEDZ_DATA_PATH="/path/to/onedz_csv/"
 
 **English** | [中文](#)
 
-A Claude Code skill built on top of the [OneDZ global detrital zircon database](https://github.com/KeranLi/Global-Detrital-Zircon) (.csv format). Developed independently by **zhangrongyu** — **not** affiliated with the OneDZ author team.
+A Claude Code skill built on top of the [OneDZ global detrital zircon database](https://github.com/KeranLi/Global-Detrital-Zircon) (.csv format). Developed by **Zhangry**.
 
 > **Data source**: Li, K., Hu, X., Chai, R., Yang, J. et al. (2025): OneDZ: A Global Detrital Zircon Database and Implications for Constructing Giant Geoscience Database, *Earth Syst. Sci. Data Discuss.* [preprint], https://doi.org/10.5194/essd-2025-157, in review, 2025.
 >
@@ -176,7 +175,7 @@ A Claude Code skill built on top of the [OneDZ global detrital zircon database](
 
 ## What It Does
 
-This skill wraps the OneDZ database's **.csv format** data (1.92M U-Pb records, 270K Lu-Hf records) into a Claude Code skill for natural-language zircon analysis.
+This skill wraps the OneDZ database's **.csv format** data (1.92M U-Pb records, 270K Lu-Hf records) into a Claude Code skill for natural-language zircon analysis. The dataset must be downloaded separately. If needed, use the included `/scripts/fix_dataset.py` script to fix formatting errors in the dataset.
 
 **Example commands:**
 ```
@@ -185,16 +184,21 @@ This skill wraps the OneDZ database's **.csv format** data (1.92M U-Pb records, 
 /onedz Analyze Cretaceous detrital zircons in Asia
 ```
 
+**Workflow:**
+1. AI reads the skill guidelines (SKILL.md)
+2. Matches the best code template from examples
+3. Generates a complete Python analysis script
+4. Runs it and returns results (KDE plots, K-S tests, statistics, CSV exports)
+
 ## Interactive Demo
 
 **[Open HTML Demo](assets/examples/onedz_skill_demo.html)** — Visual walkthrough with two real analysis examples.
 
 ## Disclaimer
 
-- This project is developed independently by **zhangrongyu**, not affiliated with the OneDZ author team
+- This project is developed by **Zhangry** based on the OneDZ database
 - OneDZ database is copyrighted by Li et al. (2025)
-- Analysis code, templates, and documentation in this repo are original work by **zhangrongyu**
-- For issues, open an Issue here — this is **not** official OneDZ support
+- For issues or suggestions, open an Issue in this repo — **not** official OneDZ support
 
 ## Dataset
 
@@ -271,6 +275,16 @@ export ONEDZ_DATA_PATH="/path/to/onedz_csv/"
 
 7 continents, **21/21 pairwise K-S tests significant**.
 
+| Continent | N (clean) | Median (Ma) |
+|-----------|-----------|-------------|
+| Asia | 697,877 | 991 |
+| N_America | 318,061 | 1,427 |
+| S_America | 133,112 | 1,157 |
+| Europe | 102,462 | 978 |
+| Africa | 97,906 | 1,184 |
+| Australia_Papua | 38,880 | 1,638 |
+| Antarctica | 19,823 | 975 |
+
 ## Version
 
 - **v1.2.0** (2026-04-20): Restructured, examples system, grouped_comparison template
@@ -279,4 +293,4 @@ export ONEDZ_DATA_PATH="/path/to/onedz_csv/"
 
 ## License
 
-This skill is developed by **zhangrongyu** for research use. The OneDZ database (.csv format) is copyrighted by Li et al. (2025) — please follow their license terms.
+Developed by **Zhangry** for research use. The OneDZ database (.csv format) is copyrighted by Li et al. (2025) — please follow their license terms.
