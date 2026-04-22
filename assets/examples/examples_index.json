@@ -1,0 +1,301 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-04-20",
+  "description": "Machine-readable index of OneDZ examples for AI matching",
+  "examples": [
+    {
+      "id": "basic_query",
+      "file": "basic_query.py",
+      "title": "基础查询示例",
+      "description": "展示最基本的数据查询流程：初始化、加载、查询、清洗、统计、导出",
+      "difficulty": "beginner",
+      "estimated_time": "3 minutes",
+      "tags": ["query", "basic", "filter", "export", "learning"],
+      "apis_used": [
+        "OneDZHandler.__init__",
+        "OneDZHandler.load",
+        "OneDZHandler.query",
+        "OneDZHandler.clean",
+        "OneDZHandler.export"
+      ],
+      "features": [
+        "periods query",
+        "continent query",
+        "rock_class1 query",
+        "data cleaning",
+        "basic statistics",
+        "data export"
+      ],
+      "outputs": ["basic_query_output.csv"],
+      "when_to_use": [
+        "用户第一次使用 OneDZ",
+        "需要简单的数据查询和导出",
+        "学习基本 API 调用"
+      ],
+      "key_code_patterns": [
+        "handler.query(periods=[...])",
+        "handler.query(continent=...)",
+        "handler.query(rock_class1=[...])",
+        "handler.clean(df, concordance_min=0.90)",
+        "handler.export(df_clean, filename)"
+      ]
+    },
+    {
+      "id": "regional_comparison",
+      "file": "regional_comparison.py",
+      "title": "区域对比分析",
+      "description": "两个区域的锆石年龄分布对比，包括 K-S 统计检验",
+      "difficulty": "intermediate",
+      "estimated_time": "10 minutes",
+      "tags": ["comparison", "statistics", "kde", "ks-test", "regional", "multi-sample"],
+      "apis_used": [
+        "OneDZHandler.query",
+        "OneDZHandler.clean",
+        "OneDZHandler.analyze",
+        "OneDZHandler.ks_test",
+        "OneDZHandler.plot_multi_kde",
+        "OneDZHandler.plot_age"
+      ],
+      "features": [
+        "multi-region query",
+        "kolmogorov-smirnov test",
+        "KDE comparison plot",
+        "statistical analysis",
+        "error handling"
+      ],
+      "outputs": [
+        "china_kde.png",
+        "australia_kde.png",
+        "china_australia_comparison.png"
+      ],
+      "when_to_use": [
+        "需要对比两个或多个区域的锆石数据",
+        "需要进行统计检验验证差异显著性",
+        "需要生成对比图表",
+        "用户询问中国vs澳大利亚（最常见）"
+      ],
+      "key_code_patterns": [
+        "handler.query(country_state=...)",
+        "handler.ks_test(ages_a, ages_b)",
+        "handler.plot_multi_kde({...})",
+        "ks_result['statistic']",
+        "df[\"Best Age\"].drop_nulls().to_numpy()"
+      ],
+      "common_mistakes_fixed": [
+        "Uses 'country_state' not 'countries'",
+        "Access ks_result['statistic'] not ['d_statistic']",
+        "Checks if df.height > 0 before processing",
+        "Uses 'Best Age' not 'BestAge' column name",
+        "Uses English labels for plots"
+      ]
+    },
+    {
+      "id": "age_distribution",
+      "file": "age_distribution.py",
+      "title": "年龄分布分析",
+      "description": "完整的年龄分布分析流程，包括 KDE 图、峰值检测、地理分布",
+      "difficulty": "intermediate",
+      "estimated_time": "8 minutes",
+      "tags": ["distribution", "kde", "peaks", "visualization", "geographic"],
+      "apis_used": [
+        "OneDZHandler.query",
+        "OneDZHandler.clean",
+        "OneDZHandler.analyze",
+        "OneDZHandler.plot_age",
+        "Viz.plot_geographic_distribution",
+        "Viz.plot_rock_type_statistics"
+      ],
+      "features": [
+        "complex query conditions",
+        "age distribution KDE",
+        "peak detection and annotation",
+        "geographic distribution",
+        "rock type statistics",
+        "multi-plot output"
+      ],
+      "outputs": [
+        "asia_cretaceous_kde.png",
+        "asia_cretaceous_geo.png",
+        "asia_cretaceous_rock.png",
+        "asia_cretaceous_data.csv"
+      ],
+      "when_to_use": [
+        "需要分析特定区域和时期的年龄分布",
+        "需要检测年龄峰值",
+        "需要生成多种可视化图表",
+        "需要地理分布分析"
+      ],
+      "key_code_patterns": [
+        "handler.analyze(df_clean)",
+        "result['summary'], result['peaks']",
+        "handler.plot_age(df, mode='kde', show_peaks=True)",
+        "handler.viz.plot_geographic_distribution(df, geo_level='country')",
+        "handler.viz.plot_rock_type_statistics(df, class_level='Class2')"
+      ]
+    },
+    {
+      "id": "luhf_analysis",
+      "file": "luhf_analysis.py",
+      "title": "Lu-Hf 同位素分析",
+      "description": "Lu-Hf 同位素数据处理，计算 εHf(t) 和 TDM",
+      "difficulty": "advanced",
+      "estimated_time": "12 minutes",
+      "tags": ["lu-hf", "isotope", "epsilon-hf", "tdm", "evolution"],
+      "apis_used": [
+        "OneDZHandler.load",
+        "OneDZHandler.join_upb_luhf",
+        "OneDZHandler.compute_epsilon_hf",
+        "OneDZHandler.plot_epsilon_hf",
+        "OneDZHandler.plot_tdm"
+      ],
+      "features": [
+        "join two tables",
+        "calculate epsilon Hf",
+        "calculate TDM",
+        "epsilon Hf evolution plot",
+        "TDM distribution plot"
+      ],
+      "outputs": [
+        "epsilon_hf_evolution.png",
+        "tdm_distribution.png",
+        "luhf_data.csv"
+      ],
+      "when_to_use": [
+        "需要分析 Hf 同位素组成",
+        "需要计算地壳模式年龄",
+        "需要研究源区演化",
+        "需要 εHf(t) vs Age 图"
+      ],
+      "key_code_patterns": [
+        "handler.load(table='global_u-pb')",
+        "handler.load(table='global_lu-hf')",
+        "handler.join_upb_luhf(join_key='Ref_Sample_Key')",
+        "handler.compute_epsilon_hf(df_joined)",
+        "handler.plot_epsilon_hf(df)"
+      ]
+    }
+  ],
+  "api_index": {
+    "query": {
+      "examples": ["basic_query", "regional_comparison", "age_distribution"],
+      "common_patterns": [
+        "handler.query(periods=[...])",
+        "handler.query(continent=...)",
+        "handler.query(country_state=...)",
+        "handler.query(age_range=(...))",
+        "handler.query(rock_class1=[...])"
+      ],
+      "parameter_notes": {
+        "country_state": "String, not list. Use 'China' not ['China']",
+        "periods": "List of strings, e.g. ['Cretaceous', 'Jurassic']",
+        "age_range": "Tuple (min, max) in Ma"
+      }
+    },
+    "clean": {
+      "examples": ["basic_query", "regional_comparison", "age_distribution"],
+      "common_patterns": [
+        "handler.clean(df, concordance_min=0.90)",
+        "handler.clean(df, age_range=(0, 4500))",
+        "handler.clean(df, concordance_max=1.10)"
+      ],
+      "parameter_notes": {
+        "concordance_min": "Default 0.90, typical range 0.90-0.95",
+        "concordance_max": "Default 1.10, typical range 1.05-1.10",
+        "age_range": "Default (0, 4500) Ma"
+      }
+    },
+    "ks_test": {
+      "examples": ["regional_comparison"],
+      "common_patterns": [
+        "result = handler.ks_test(ages_a, ages_b)",
+        "result['statistic']  # D statistic",
+        "result['p_value']",
+        "result['significant']  # boolean"
+      ],
+      "return_value": {
+        "statistic": "float - D statistic (not 'd_statistic')!",
+        "p_value": "float - p-value",
+        "significant": "bool - whether significant at alpha=0.05",
+        "conclusion": "str - text conclusion"
+      }
+    },
+    "plot_multi_kde": {
+      "examples": ["regional_comparison"],
+      "common_patterns": [
+        "handler.plot_multi_kde({'Label': ages, ...})",
+        "handler.plot_multi_kde({...}, age_range=(0, 4000))",
+        "handler.plot_multi_kde({...}, save='filename.png')"
+      ],
+      "parameter_notes": {
+        "data_dict": "Dict[str, np.ndarray] - label to ages mapping",
+        "age_range": "Tuple (min, max) in Ma, default (0, 4000)",
+        "save": "String filename"
+      }
+    },
+    "analyze": {
+      "examples": ["age_distribution"],
+      "return_value": {
+        "summary": "Dict with n, min, max, mean, std, median, q25, q75",
+        "peaks": "List of dicts with age, uncertainty, peak_height",
+        "kde": "Tuple (x, y) arrays",
+        "bootstrap_mean": "Dict with mean and CI"
+      }
+    }
+  },
+  "task_to_example_mapping": {
+    "对比两个区域的锆石数据": "regional_comparison",
+    "区域对比分析": "regional_comparison",
+    "K-S 检验": "regional_comparison",
+    "Kolmogorov-Smirnov 检验": "regional_comparison",
+    "中国和澳大利亚对比": "regional_comparison",
+    "年龄分布分析": "age_distribution",
+    "峰值检测": "age_distribution",
+    "KDE 图": "age_distribution",
+    "基础查询": "basic_query",
+    "数据导出": "basic_query",
+    "学习用法": "basic_query",
+    "第一次使用": "basic_query",
+    "Hf 同位素": "luhf_analysis",
+    "εHf(t)": "luhf_analysis",
+    "epsilon Hf": "luhf_analysis",
+    "TDM": "luhf_analysis",
+    "地壳模式年龄": "luhf_analysis"
+  },
+  "error_prevention": {
+    "common_errors": [
+      {
+        "error": "Using 'countries' parameter",
+        "fix": "Use 'country_state' (singular string)",
+        "example": "handler.query(country_state='China')"
+      },
+      {
+        "error": "Accessing ks_result['d_statistic']",
+        "fix": "Use ks_result['statistic']",
+        "example": "d = ks_result['statistic']"
+      },
+      {
+        "error": "Using 'BestAge' column",
+        "fix": "Use 'Best Age' (with space)",
+        "example": "df['Best Age']"
+      },
+      {
+        "error": "Not checking if query returned data",
+        "fix": "Check df.height > 0",
+        "example": "if df.height == 0: print('No data')"
+      },
+      {
+        "error": "Using Chinese labels in plots",
+        "fix": "Use English labels",
+        "example": "{'China': ages} not {'中国': ages}"
+      }
+    ]
+  },
+  "metadata": {
+    "total_examples": 4,
+    "total_size_bytes": 22605,
+    "average_difficulty": "intermediate",
+    "most_used_example": "regional_comparison",
+    "beginner_friendly": ["basic_query"],
+    "advanced": ["luhf_analysis"]
+  }
+}

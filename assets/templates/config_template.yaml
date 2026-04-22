@@ -1,0 +1,141 @@
+# OneDZ Handler 配置模板
+# 复制此文件到你的项目目录并重命名为 config.yaml
+# 然后根据需要修改配置项
+
+# 数据路径配置
+data:
+  # OneDZ 数据集路径
+  path: "/home/zry/my-OneDZ-skill/onedz_csv_20260328/"
+
+  # 或使用环境变量 ${ONEDZ_DATA_PATH}
+  # path: "${ONEDZ_DATA_PATH}"
+
+# 数据清洗配置
+cleaning:
+  # 是否计算最佳年龄
+  compute_best_age: true
+
+  # 谐和度过滤
+  filter_concordance: true
+  concordance_min: 0.90
+  concordance_max: 1.10
+
+  # 误差标准化
+  standardize_errors: true
+  target_sigma: 1  # 1 = 1σ, 2 = 2σ
+
+  # 移除缺失值
+  remove_null_ages: true
+
+  # 年龄范围过滤 (Ma)
+  age_range_min: 0
+  age_range_max: 4000
+
+# 可视化配置
+visualization:
+  # 图像分辨率 (DPI)
+  dpi: 300
+
+  # 图像尺寸 (英寸)
+  figure_width: 10
+  figure_height: 6
+
+  # 颜色映射
+  color_map: "viridis"
+
+  # 字体配置
+  font_family: "sans-serif"
+  font_size: 12
+
+  # 中文字体（可选）
+  # font_family: "SimHei"
+
+  # 图表样式
+  style: "seaborn-v0_8-darkgrid"
+
+  # KDE 配置
+  kde:
+    bandwidth: null  # null = 自适应
+    age_range_min: 0
+    age_range_max: 4000
+
+  # 峰值检测配置
+  peak_detection:
+    enabled: true
+    threshold: 0.05
+    min_distance: 10
+
+# 统计分析配置
+statistics:
+  # 自助法配置
+  bootstrap:
+    n_iterations: 1000
+    confidence_level: 0.95
+    random_seed: 42
+
+  # K-S 检验配置
+  ks_test:
+    alpha: 0.05
+
+# 数据导出配置
+export:
+  # 默认导出格式
+  default_format: "csv"
+
+  # 坐标系统
+  coordinate_system: "WGS84"
+
+  # CSV 选项
+  csv:
+    include_index: false
+    float_format: "%.4f"
+
+  # Excel 选项
+  excel:
+    sheet_name: "OneDZ Data"
+    freeze_header: true
+
+  # GeoJSON 选项
+  geojson:
+    feature_type: "Point"
+    precision: 6
+
+# CLI 配置
+cli:
+  # 日志级别
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+
+  # 是否显示进度条
+  show_progress: true
+
+  # 默认输出目录
+  output_dir: "output"
+
+  # 是否覆盖已存在文件
+  overwrite: false
+
+# 性能配置
+performance:
+  # 分块大小（用于大数据集）
+  chunk_size: 10000
+
+  # 最大内存使用 (GB)
+  max_memory_gb: 8
+
+  # 是否使用多线程
+  use_multiprocessing: true
+  n_workers: 4
+
+# 调试配置
+debug:
+  # 是否启用调试模式
+  enabled: false
+
+  # 是否保存中间结果
+  save_intermediate: false
+
+  # 中间结果目录
+  intermediate_dir: "intermediate"
+
+  # 详细输出
+  verbose: true
