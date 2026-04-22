@@ -31,7 +31,7 @@
 
 ## 交互式演示
 
-**[打开 HTML 演示](assets/examples/onedz_skill_demo.html)** — 可视化展示 Skill 工作流程，含两个真实分析实例。
+**[打开 HTML 演示](assets/demo/onedz_skill_demo.html)** — 可视化展示 Skill 工作流程，含两个真实分析实例。
 
 ## 声明
 
@@ -67,7 +67,11 @@ onedz-skill/
 │       ├── basic_query.py                 # 基础查询
 │       ├── luhf_analysis.py               # Lu-Hf 同位素分析
 │       ├── onedz_dataset_structure.json   # 轻量数据索引 (~50KB)
-│       └── onedz_skill_demo.html          # 交互式演示
+│       └── ...
+├── assets/demo/                        # 交互式演示
+│   ├── onedz_skill_demo.html          # HTML 演示页面
+│   ├── china_india_comparison.png     # 示例1 结果图
+│   └── all_continents_kde.png         # 示例2 结果图
 └── references/
     ├── api_reference.md    # 完整 API 文档
     ├── quick_reference.md  # 快速参考
@@ -189,7 +193,7 @@ This skill wraps the OneDZ database's **.csv format** data (1.92M U-Pb records, 
 
 ## Interactive Demo
 
-**[Open HTML Demo](assets/examples/onedz_skill_demo.html)** — Visual walkthrough with two real analysis examples.
+**[Open HTML Demo](assets/demo/onedz_skill_demo.html)** — Visual walkthrough with two real analysis examples.
 
 ## Disclaimer
 
