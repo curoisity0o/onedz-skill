@@ -41,14 +41,21 @@
 
 ## 数据集
 
-本技能包使用 OneDZ 数据库的 **.csv 格式**数据文件（`zircon_upb.csv`、`zircon_luhf.csv`）。
+本技能包使用 OneDZ 数据库的 **.csv 格式**数据文件，需要单独下载并放置到本地。
+
+**当前适配版本: `onedz_csv_20260328`**
 
 | 文件 | 记录数 | 列数 | 大小 |
 |------|--------|------|------|
 | zircon_upb.csv | ~192 万 | 72 | ~1.2 GB |
 | zircon_luhf.csv | ~27 万 | 86 | ~164 MB |
 
-**下载:** https://onedz.top/DownloadPage.html 或 https://zenodo.org/records/17407937
+**下载:**
+- OneDZ 官网: https://onedz.top/DownloadPage.html
+- Zenodo (当前版本): https://zenodo.org/records/17407937
+- Zenodo (新版本): https://zenodo.org/records/19690702
+
+> **注意**: 当前 Skill 代码基于 `onedz_csv_20260328` 版本的列名（如 `Best Age`、`Depos.Age (Period)`、`Class-1 Rock Type`）。新版数据集（Zenodo #19690702）已重命名列（如 `Best_age`、`Depos_Age_Period`）并改为分片格式，需要适配后才能使用。可使用 `/scripts/fix_dataset.py` 对下载的数据集进行格式修正。
 
 ## 技能架构
 
@@ -203,14 +210,21 @@ This skill wraps the OneDZ database's **.csv format** data (1.92M U-Pb records, 
 
 ## Dataset
 
-This skill uses the OneDZ database in **.csv format** (`zircon_upb.csv`, `zircon_luhf.csv`).
+This skill uses the OneDZ database in **.csv format**, which must be downloaded separately.
+
+**Currently adapted version: `onedz_csv_20260328`**
 
 | File | Records | Columns | Size |
 |------|---------|---------|------|
 | zircon_upb.csv | ~1.92M | 72 | ~1.2 GB |
 | zircon_luhf.csv | ~270K | 86 | ~164 MB |
 
-**Download:** https://onedz.top/DownloadPage.html or https://zenodo.org/records/17407937
+**Download:**
+- OneDZ Website: https://onedz.top/DownloadPage.html
+- Zenodo (current version): https://zenodo.org/records/17407937
+- Zenodo (new version): https://zenodo.org/records/19690702
+
+> **Note**: The current Skill code is based on the column names from `onedz_csv_20260328` (e.g., `Best Age`, `Depos.Age (Period)`, `Class-1 Rock Type`). The new dataset (Zenodo #19690702) has renamed columns (e.g., `Best_age`, `Depos_Age_Period`) and uses split-file format, requiring adaptation before use. Use `/scripts/fix_dataset.py` to fix formatting issues in the downloaded dataset.
 
 ## Architecture
 
