@@ -50,9 +50,6 @@
 
 **下载:** https://onedz.top/DownloadPage.html 或 https://zenodo.org/records/17407937
 
-**引用格式:**
-> Li, K., Hu, X., Chai, R., Yang, J. et al. (2025): OneDZ: A Global Detrital Zircon Database and Implications for Constructing Giant Geoscience Database, Earth Syst. Sci. Data Discuss. [preprint], https://doi.org/10.5194/essd-2025-157, in review, 2025.
-
 ## 技能架构
 
 ```
@@ -210,9 +207,6 @@ This skill uses the OneDZ database in **.csv format** (`zircon_upb.csv`, `zircon
 | zircon_luhf.csv | ~270K | 86 | ~164 MB |
 
 **Download:** https://onedz.top/DownloadPage.html or https://zenodo.org/records/17407937
-
-**Citation:**
-> Li, K., Hu, X., Chai, R., Yang, J. et al. (2025): OneDZ: A Global Detrital Zircon Database and Implications for Constructing Giant Geoscience Database, Earth Syst. Sci. Data Discuss. [preprint], https://doi.org/10.5194/essd-2025-157, in review, 2025.
 
 ## Architecture
 
