@@ -51,9 +51,9 @@
 | zircon_luhf.csv | ~27 万 | 86 | ~164 MB |
 
 **下载:**
+- **[GitHub Release (推荐)](https://github.com/curoisity0o/onedz-skill/releases/tag/dataset-v20260328)** — 已修正格式的版本，解压即用
 - OneDZ 官网: https://onedz.top/DownloadPage.html
-- Zenodo (当前版本): https://zenodo.org/records/17407937
-- Zenodo (新版本): https://zenodo.org/records/19690702
+- Zenodo (原始版本): https://zenodo.org/records/17407937
 
 > **注意**: 当前 Skill 代码基于 `onedz_csv_20260328` 版本的列名（如 `Best Age`、`Depos.Age (Period)`、`Class-1 Rock Type`）。新版数据集（Zenodo #19690702）已重命名列（如 `Best_age`、`Depos_Age_Period`）并改为分片格式，需要适配后才能使用。可使用 `/scripts/fix_dataset.py` 对下载的数据集进行格式修正。
 
@@ -220,11 +220,11 @@ This skill uses the OneDZ database in **.csv format**, which must be downloaded 
 | zircon_luhf.csv | ~270K | 86 | ~164 MB |
 
 **Download:**
+- **[GitHub Release (Recommended)](https://github.com/curoisity0o/onedz-skill/releases/tag/dataset-v20260328)** — Format-corrected version, ready to use after unzip
 - OneDZ Website: https://onedz.top/DownloadPage.html
-- Zenodo (current version): https://zenodo.org/records/17407937
-- Zenodo (new version): https://zenodo.org/records/19690702
+- Zenodo (original version): https://zenodo.org/records/17407937
 
-> **Note**: The current Skill code is based on the column names from `onedz_csv_20260328` (e.g., `Best Age`, `Depos.Age (Period)`, `Class-1 Rock Type`). The new dataset (Zenodo #19690702) has renamed columns (e.g., `Best_age`, `Depos_Age_Period`) and uses split-file format, requiring adaptation before use. Use `/scripts/fix_dataset.py` to fix formatting issues in the downloaded dataset.
+> **Note**: The current Skill code is based on column names from `onedz_csv_20260328` (e.g., `Best Age`, `Depos.Age (Period)`, `Class-1 Rock Type`). The newer Zenodo dataset (#19690702) has renamed columns and split-file format, which is not yet supported.
 
 ## Architecture
 
