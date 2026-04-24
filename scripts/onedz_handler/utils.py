@@ -13,11 +13,23 @@ from .config import COLUMN_ALIASES, Cols
 
 
 # ──────────────────────────── 列名标准化 ─────────────────────────
-def normalize_columns(df: pl.DataFrame) -> pl.DataFrame:
+def normalize_columns(df: pl.DataFrame, adapter=None, is_luhf: bool = False) -> pl.DataFrame:
     """
     将 DataFrame 列名统一为 config.Cols 中定义的标准名。
     处理 CSV 和 MySQL 来源的命名差异。
+
+    Parameters
+    ----------
+    df : pl.DataFrame
+    adapter : DatasetAdapter, optional
+        适配器实例，优先使用 adapter 的映射
+    is_luhf : bool
+        是否为 Lu-Hf 数据（需要额外的列名映射）
     """
+    if adapter is not None:
+        return adapter.normalize(df, is_luhf=is_luhf)
+
+    # 向后兼容：无 adapter 时使用旧逻辑
     rename_map: Dict[str, str] = {}
     existing = set(df.columns)
 
@@ -32,43 +44,45 @@ def normalize_columns(df: pl.DataFrame) -> pl.DataFrame:
     return df
 
 
-def standardize_column_name(col_name: str, df: pl.DataFrame) -> str:
+def standardize_column_name(col_name: str, df, adapter=None) -> str:
     """
-    标准化列名，返回在 DataFrame 中实际存在的列名
-
-    处理 CSV/SQL 格式差异，返回标准列名或原始列名
+    标准化列名，返回在 DataFrame/LazyFrame 中实际存在的列名。
 
     Parameters
     ----------
     col_name : str
         期望的列名（标准名）
-    df : pl.DataFrame
+    df : pl.DataFrame | pl.LazyFrame
         数据框
-
-    Returns
-    -------
-    str
-        实际存在的列名
-
-    Examples
-    --------
-    >>> df = pl.DataFrame({"Ref No.": [1, 2], "Age": [100, 200]})
-    >>> standardize_column_name("Ref_No.", df)
-    'Ref No.'
-    >>> standardize_column_name("NonExistent", df)
-    'NonExistent'
+    adapter : DatasetAdapter, optional
+        适配器实例
     """
-    # 如果列名直接存在，返回它
-    if col_name in df.columns:
+    # 获取列名列表
+    if isinstance(df, pl.DataFrame):
+        columns = df.columns
+    elif isinstance(df, pl.LazyFrame):
+        columns = df.collect_schema().names()
+    else:
+        columns = list(df.columns) if hasattr(df, 'columns') else []
+
+    if col_name in columns:
         return col_name
 
-    # 检查是否是标准列名，寻找别名
+    # 使用 adapter 的反向映射
+    if adapter is not None and adapter.is_active:
+        for ext, std in adapter._column_rename_map.items():
+            if std == col_name and ext in columns:
+                return ext
+        for ext, std in adapter._luhf_rename_map.items():
+            if std == col_name and ext in columns:
+                return ext
+
+    # 向后兼容：COLUMN_ALIASES
     if col_name in COLUMN_ALIASES:
         for alias in COLUMN_ALIASES[col_name]:
-            if alias in df.columns:
+            if alias in columns:
                 return alias
 
-    # 不存在，返回原始名称（调用者可以处理错误）
     return col_name
 
 

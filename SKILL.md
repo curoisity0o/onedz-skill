@@ -7,7 +7,7 @@ description:
   or geological statistical analysis of zircon ages. Also triggers for queries about zircon data
   filtering, probability density plots, peak detection in age distributions, or exporting
   geochemical data to GeoJSON/Shapefile formats."
-version: 1.2.0
+version: 1.3.0
 ---
 
 ## 🤖 AI 使用指南（必读）

@@ -25,6 +25,7 @@ from .utils import (
     period_to_age_range,
     standardize_column_name,
 )
+from .adapters import DatasetAdapter
 
 
 class DataEngine:
@@ -35,8 +36,44 @@ class DataEngine:
         self._upb_df: Optional[pl.DataFrame] = None
         self._luhf_df: Optional[pl.DataFrame] = None
         self._mysql_engine = None
+        self.adapter = DatasetAdapter()
 
     # ──────────────────── 内部共享方法 ─────────────────────────
+
+    def _ensure_adapter(self, csv_dir: Optional[Path] = None):
+        """确保 adapter 已激活（自动检测或手动指定版本）。"""
+        if not self.adapter.is_active:
+            directory = csv_dir or self.config.csv_dir
+            if self.config.dataset_version:
+                self.adapter.activate(self.config.dataset_version)
+            else:
+                self.adapter.auto_activate(directory)
+
+    def _find_csv_files(self, table: str, directory: Optional[Path] = None) -> List[Path]:
+        """
+        查找 CSV 文件（支持单文件和分片文件）。
+
+        Returns
+        -------
+        list[Path] — 匹配的 CSV 文件路径列表
+        """
+        directory = directory or self.config.csv_dir
+
+        if self.adapter.is_active and self.adapter.is_split_mode:
+            fmt = self.adapter.file_format
+            if table == TABLE_UPB:
+                split_dir = directory / fmt.get("upb_dir", "")
+                pattern = fmt.get("upb_pattern", "*.csv")
+            else:
+                split_dir = directory / fmt.get("luhf_dir", "")
+                pattern = fmt.get("luhf_pattern", "*.csv")
+
+            files = sorted(split_dir.glob(pattern))
+            if not files:
+                raise FileNotFoundError(f"分片目录 {split_dir} 中未找到 CSV 文件")
+            return files
+        else:
+            return [self._find_csv_file(table, directory)]
 
     def _find_csv_file(self, table: str, directory: Optional[Path] = None) -> Path:
         """
@@ -189,14 +226,21 @@ class DataEngine:
 
     @staticmethod
     def _post_process(df):
-        """加载后的后处理：数值列转换 + 坐标修复。"""
-        numeric_cols = [
+        """加载后的后处理：数值列转换 + 坐标修复 + 脏数据诊断。"""
+        # 已知数值列（标准列名）
+        known_numeric = [
             Cols.LATITUDE, Cols.LONGITUDE,
             Cols.AGE_206PB_238U, Cols.AGE_207PB_206PB, Cols.AGE_207PB_235U,
+            Cols.AGE_206PB_238U_1S, Cols.AGE_206PB_238U_2S,
+            Cols.AGE_207PB_206PB_1S, Cols.AGE_207PB_206PB_2S,
+            Cols.AGE_207PB_235U_1S, Cols.AGE_207PB_235U_2S,
             Cols.BEST_AGE, Cols.BEST_AGE_1S, Cols.BEST_AGE_2S,
             Cols.DISCORD_RATIO,
             Cols.MAX_DEPOS_AGE, Cols.EST_DEPOS_AGE, Cols.MIN_DEPOS_AGE,
-            Cols.U_PPM, Cols.TH_PPM, Cols.TH_U,
+            Cols.U_PPM, Cols.TH_PPM, Cols.PB_PPM, Cols.TH_U,
+            Cols.RATIO_206PB_238U, Cols.RATIO_206PB_238U_ERR,
+            Cols.RATIO_207PB_235U, Cols.RATIO_207PB_235U_ERR,
+            Cols.RATIO_207PB_206PB, Cols.RATIO_207PB_206PB_ERR,
             "176Hf/177Hf", "176Hf/177Hf_1sigma", "176Hf/177Hf_2sigma",
             "176Lu/177Hf", "176Lu/177Hf_1sigma",
             "εHf(0)", "εHf(0)_1sigma",
@@ -205,8 +249,40 @@ class DataEngine:
             "TDM2 (Ma)", "TDM2 (Ma)_1sigma",
             "U-Pb Age (Ma)", "U-Pb Age (Ma)_1σ", "U-Pb Age (Ma)_2σ",
         ]
+        # 动态补充：新数据集可能有未映射的数值列（如 epsilon_Hf_t, Upb_Age, TDM1_Ma）
+        for c in df.columns:
+            if c in known_numeric:
+                continue
+            if c in df.columns and df[c].dtype in (pl.Utf8, pl.String):
+                # 采样检测是否看起来像数值列（前100个非空值中 >80% 可转数值）
+                sample = df[c].drop_nulls().head(100)
+                if len(sample) > 0:
+                    numeric_count = len(sample.cast(pl.Float64, strict=False).drop_nulls())
+                    if numeric_count / len(sample) > 0.8:
+                        known_numeric.append(c)
+
+        numeric_cols = known_numeric
         existing_numeric = [c for c in numeric_cols if c in df.columns]
+        # 转换前记录非空数
+        pre_nulls = {c: df[c].null_count() for c in existing_numeric}
         df = coerce_numeric(df, existing_numeric)
+        # 检测因类型转换新增的 null（可能由编码乱码等脏数据导致）
+        dirty_cols = []
+        for c in existing_numeric:
+            new_nulls = df[c].null_count() - pre_nulls[c]
+            if new_nulls > 0:
+                total = df.height
+                dirty_cols.append((c, new_nulls, new_nulls / total * 100))
+
+        if dirty_cols:
+            # 按数量降序，只报告占比 >0.05% 或数量 >20 的列
+            dirty_cols.sort(key=lambda x: x[1], reverse=True)
+            reported = [(c, n, p) for c, n, p in dirty_cols if p > 0.05 or n > 20]
+            if reported:
+                print(f"[DataEngine] ⚠ {len(reported)} 列存在无法转为数值的数据（已置为 null）：")
+                for c, n, p in reported:
+                    print(f"  • {c}: {n} 个异常值 ({p:.2f}%)")
+                print(f"  可能原因：数据源编码损坏或格式异常")
         df = estimate_missing_coordinates(df)
         return df
 
@@ -219,6 +295,7 @@ class DataEngine:
     ) -> pl.DataFrame:
         """
         从 CSV 文件加载数据（全量加载到内存并缓存）。
+        支持单文件和分片文件两种模式。
 
         Parameters
         ----------
@@ -230,11 +307,24 @@ class DataEngine:
         -------
         pl.DataFrame
         """
-        target = self._find_csv_file(table, csv_dir)
+        # 自动检测并激活适配器
+        self._ensure_adapter(csv_dir)
 
-        print(f"[DataEngine] 加载 CSV: {target}")
-        df = pl.read_csv(target, infer_schema_length=50000, ignore_errors=True)
-        df = normalize_columns(df)
+        is_luhf = (table == TABLE_LUHF)
+        files = self._find_csv_files(table, csv_dir)
+
+        if len(files) == 1:
+            print(f"[DataEngine] 加载 CSV: {files[0]}")
+            df = pl.read_csv(files[0], infer_schema_length=50000, ignore_errors=True)
+        else:
+            print(f"[DataEngine] 加载 {len(files)} 个分片文件 ...")
+            dfs = []
+            for f in files:
+                dfs.append(pl.read_csv(f, infer_schema_length=50000, ignore_errors=True))
+            df = pl.concat(dfs, how="diagonal_relaxed")
+
+        # 使用 adapter 进行列名标准化
+        df = self.adapter.normalize(df, is_luhf=is_luhf)
         df = self._post_process(df)
 
         # 缓存
@@ -391,10 +481,22 @@ class DataEngine:
         >>> # 不需要 load()，直接查询，内存占用 ~0.5 GB
         >>> df_china = engine.query_from_csv(country_state="China")
         """
-        target = self._find_csv_file(table)
+        # 确保适配器已激活
+        self._ensure_adapter()
+
+        # 查找文件（支持分片）
+        files = self._find_csv_files(table)
 
         # 惰性读取（不占内存）
-        lf = pl.scan_csv(target, infer_schema_length=50000, ignore_errors=True)
+        if len(files) == 1:
+            lf = pl.scan_csv(files[0], infer_schema_length=50000, ignore_errors=True)
+            scan_name = files[0].name
+        else:
+            # 分片文件：逐个 scan 再 concat（全部 lazy，不占内存）
+            lfs = [pl.scan_csv(f, infer_schema_length=50000, ignore_errors=True) for f in files]
+            lf = pl.concat(lfs, how="diagonal_relaxed")
+            scan_name = f"{len(files)} parts"
+
         # 列名标准化（lazy 版本）
         lf = self._normalize_lazy(lf)
 
@@ -410,21 +512,25 @@ class DataEngine:
         lf = self._apply_filters(lf, filters, max_records)
 
         # collect() 时才真正读取文件，只加载匹配的行
-        print(f"[DataEngine] 惰性查询: 扫描 {target.name} ...")
+        print(f"[DataEngine] 惰性查询: 扫描 {scan_name} ...")
         df = lf.collect()
 
         # 后处理
-        df = normalize_columns(df)
+        df = self.adapter.normalize(df)
         df = self._post_process(df)
 
         print(f"[DataEngine] 惰性查询结果: {df.height} 行")
         return df
 
-    def _normalize_lazy(self, lf: pl.LazyFrame) -> pl.LazyFrame:
+    def _normalize_lazy(self, lf: pl.LazyFrame, is_luhf: bool = False) -> pl.LazyFrame:
         """
         LazyFrame 版本的列名标准化。
         scan_csv 后列名可能是原始 CSV 列名，需要映射到标准名。
         """
+        if self.adapter.is_active:
+            return self.adapter.normalize_lazy(lf, is_luhf=is_luhf)
+
+        # 向后兼容
         rename_map = {}
         schema = lf.collect_schema()
         existing = set(schema.names())
@@ -450,37 +556,20 @@ class DataEngine:
     ) -> pl.DataFrame:
         """
         内存友好的惰性 U-Pb / Lu-Hf join。
-        U-Pb 用 scan_csv 惰性加载（不占内存），Lu-Hf 直接加载（183 MB，很小）。
-        polars lazy 引擎自动优化：扫描 U-Pb 时只保留能 join 上的行。
-        不需要先调用 load()。
-
-        Parameters
-        ----------
-        join_key : str
-            连接键，默认 "Ref_Sample_Key"
-        how : str
-            连接方式 "inner" / "left" / "outer"
-        upb_filters : dict, optional
-            U-Pb 预过滤条件，如 {"country_state": "China"}。
-            指定后先过滤 U-Pb 再 join，进一步节省内存。
-
-        Returns
-        -------
-        pl.DataFrame
-
-        Example
-        -------
-        >>> # 全量 join（内存 ~1 GB）
-        >>> df = engine.join_from_csv()
-
-        >>> # 带预过滤（只要中国的 Lu-Hf 数据，内存 ~0.5 GB）
-        >>> df = engine.join_from_csv(upb_filters={"country_state": "China"})
+        支持单键和复合键两种 join 策略。
         """
-        upb_file = self._find_csv_file(TABLE_UPB)
-        luhf_file = self._find_csv_file(TABLE_LUHF)
+        self._ensure_adapter()
 
-        # U-Pb: 惰性加载（0 内存）
-        lf_upb = pl.scan_csv(upb_file, infer_schema_length=50000, ignore_errors=True)
+        # 获取文件
+        upb_files = self._find_csv_files(TABLE_UPB)
+        luhf_files = self._find_csv_files(TABLE_LUHF)
+
+        # U-Pb: 惰性加载
+        if len(upb_files) == 1:
+            lf_upb = pl.scan_csv(upb_files[0], infer_schema_length=50000, ignore_errors=True)
+        else:
+            dfs = [pl.scan_csv(f, infer_schema_length=50000, ignore_errors=True) for f in upb_files]
+            lf_upb = pl.concat(dfs, how="diagonal_relaxed")
         lf_upb = self._normalize_lazy(lf_upb)
 
         # 可选：先过滤 U-Pb
@@ -493,37 +582,71 @@ class DataEngine:
                 lf_upb = lf_upb.filter(combined)
             print(f"[DataEngine] 惰性 join: U-Pb 预过滤 {upb_filters}")
 
-        # Lu-Hf: 直接加载（183 MB，没问题）
-        print(f"[DataEngine] 惰性 join: 加载 Lu-Hf {luhf_file.name} ...")
-        df_luhf = pl.read_csv(luhf_file, infer_schema_length=50000, ignore_errors=True)
-        df_luhf = normalize_columns(df_luhf)
+        # Lu-Hf: 直接加载
+        if len(luhf_files) == 1:
+            print(f"[DataEngine] 惰性 join: 加载 Lu-Hf {luhf_files[0].name} ...")
+            df_luhf = pl.read_csv(luhf_files[0], infer_schema_length=50000, ignore_errors=True)
+        else:
+            print(f"[DataEngine] 惰性 join: 加载 {len(luhf_files)} 个 Lu-Hf 分片 ...")
+            dfs = [pl.read_csv(f, infer_schema_length=50000, ignore_errors=True) for f in luhf_files]
+            df_luhf = pl.concat(dfs, how="diagonal_relaxed")
+        df_luhf = self.adapter.normalize(df_luhf, is_luhf=True)
 
-        # 标准化连接键名称
-        upb_key = standardize_column_name(join_key, lf_upb.collect_schema())
-        luhf_key = standardize_column_name(join_key, df_luhf)
+        # 执行 join
+        join_config = self.adapter.join_config
 
-        # 检查连接键是否存在
-        if upb_key not in lf_upb.collect_schema().names():
-            schema_names = lf_upb.collect_schema().names()[:10]
-            raise ValueError(
-                f"U-Pb 数据中未找到连接键 '{upb_key}'。\n"
-                f"可用列（前10个）: {', '.join(schema_names)}..."
-            )
-        if luhf_key not in df_luhf.columns:
-            available_cols = ", ".join(df_luhf.columns[:10])
-            raise ValueError(
-                f"Lu-Hf 数据中未找到连接键 '{luhf_key}'。\n"
-                f"可用列（前10个）: {available_cols}..."
-            )
+        if join_config.get("strategy") == "composite":
+            # 复合键 join（新数据集：无 Ref_Sample_Key）
+            composite_keys = join_config.get("composite_keys", [])
+            print(f"[DataEngine] 惰性 join: 复合键={composite_keys}, 方式={how}")
 
-        # 惰性 join
-        print(f"[DataEngine] 惰性 join: 连接键={join_key}, 方式={how}")
-        lf_result = lf_upb.join(df_luhf, left_on=upb_key, right_on=luhf_key, how=how)
+            # 构建复合连接键（统一转 String 避免类型不匹配）
+            def _make_key_expr(keys):
+                """构建复合键表达式，Year 列去除 .0 后缀。"""
+                exprs = []
+                for k in keys:
+                    e = pl.col(k).cast(pl.Utf8)
+                    if k == "Year":
+                        e = e.str.replace(r"\.0$", "")
+                    exprs.append(e)
+                return pl.concat_str(exprs, separator="|||").alias("_join_key")
 
-        # collect() 才真正执行
-        print(f"[DataEngine] 惰性 join: 执行中 ...")
-        df_result = lf_result.collect()
-        df_result = normalize_columns(df_result)
+            # 先 collect 过滤后的 U-Pb，再与 Lu-Hf 做 eager join
+            print(f"[DataEngine] 惰性 join: 收集 U-Pb ...")
+            df_upb_filtered = lf_upb.collect()
+            print(f"[DataEngine] 惰性 join: U-Pb 过滤后 {df_upb_filtered.height} 行")
+
+            df_upb_filtered = df_upb_filtered.with_columns(_make_key_expr(composite_keys))
+            df_luhf = df_luhf.with_columns(_make_key_expr(composite_keys))
+            df_result = df_upb_filtered.join(df_luhf, on="_join_key", how=how)
+        else:
+            # 单键 join（旧数据集：有 Ref_Sample_Key）
+            upb_key = standardize_column_name(join_key, lf_upb.collect_schema(), self.adapter)
+            luhf_key = standardize_column_name(join_key, df_luhf, self.adapter)
+
+            if upb_key not in lf_upb.collect_schema().names():
+                schema_names = lf_upb.collect_schema().names()[:10]
+                raise ValueError(
+                    f"U-Pb 数据中未找到连接键 '{upb_key}'。\n"
+                    f"可用列（前10个）: {', '.join(schema_names)}..."
+                )
+            if luhf_key not in df_luhf.columns:
+                available_cols = ", ".join(df_luhf.columns[:10])
+                raise ValueError(
+                    f"Lu-Hf 数据中未找到连接键 '{luhf_key}'。\n"
+                    f"可用列（前10个）: {available_cols}..."
+                )
+
+            print(f"[DataEngine] 惰性 join: 连接键={join_key}, 方式={how}")
+            # 先 collect 过滤后的 U-Pb（保持原始设计：Lu-Hf 是物化 DataFrame）
+            print(f"[DataEngine] 惰性 join: 收集 U-Pb ...")
+            df_upb_filtered = lf_upb.collect()
+            print(f"[DataEngine] 惰性 join: U-Pb 过滤后 {df_upb_filtered.height} 行")
+            df_result = df_upb_filtered.join(df_luhf, left_on=upb_key, right_on=luhf_key, how=how)
+
+        # 清理临时列
+        if "_join_key" in df_result.columns:
+            df_result = df_result.drop("_join_key")
 
         print(f"[DataEngine] 惰性 join 完成: {df_result.height} 行, {df_result.width} 列")
         return df_result
@@ -585,32 +708,46 @@ class DataEngine:
         if luhf is None or luhf.height == 0:
             raise ValueError("Lu-Hf 数据未加载或为空。请先调用 load_csv() 加载数据。")
 
-        # 标准化连接键名称
-        upb_key = standardize_column_name(join_key, upb)
-        luhf_key = standardize_column_name(join_key, luhf)
-
-        # 检查连接键是否存在
-        if upb_key not in upb.columns:
-            available_cols = ", ".join(upb.columns[:10])
-            raise ValueError(
-                f"U-Pb 数据中未找到连接键 '{upb_key}'。\n"
-                f"可用列（前10个）: {available_cols}..."
-            )
-        if luhf_key not in luhf.columns:
-            available_cols = ", ".join(luhf.columns[:10])
-            raise ValueError(
-                f"Lu-Hf 数据中未找到连接键 '{luhf_key}'。\n"
-                f"可用列（前10个）: {available_cols}..."
-            )
-
         # 执行 JOIN
         print(f"[DataEngine] 执行 U-Pb 与 Lu-Hf 联合查询")
-        print(f"[DataEngine]   连接键: {join_key}")
         print(f"[DataEngine]   连接方式: {how}")
         print(f"[DataEngine]   U-Pb 记录: {upb.height:,}")
         print(f"[DataEngine]   Lu-Hf 记录: {luhf.height:,}")
 
-        result = upb.join(luhf, left_on=upb_key, right_on=luhf_key, how=how)
+        join_config = self.adapter.join_config if self.adapter.is_active else {}
+
+        if join_config.get("strategy") == "composite":
+            composite_keys = join_config.get("composite_keys", [])
+            print(f"[DataEngine]   复合键: {composite_keys}")
+
+            upb = upb.with_columns(
+                pl.concat_str([pl.col(k) for k in composite_keys], separator="|||").alias("_join_key")
+            )
+            luhf = luhf.with_columns(
+                pl.concat_str([pl.col(k) for k in composite_keys], separator="|||").alias("_join_key")
+            )
+            result = upb.join(luhf, on="_join_key", how=how)
+            if "_join_key" in result.columns:
+                result = result.drop("_join_key")
+        else:
+            # 单键 join
+            upb_key = standardize_column_name(join_key, upb, self.adapter)
+            luhf_key = standardize_column_name(join_key, luhf, self.adapter)
+
+            if upb_key not in upb.columns:
+                available_cols = ", ".join(upb.columns[:10])
+                raise ValueError(
+                    f"U-Pb 数据中未找到连接键 '{upb_key}'。\n"
+                    f"可用列（前10个）: {available_cols}..."
+                )
+            if luhf_key not in luhf.columns:
+                available_cols = ", ".join(luhf.columns[:10])
+                raise ValueError(
+                    f"Lu-Hf 数据中未找到连接键 '{luhf_key}'。\n"
+                    f"可用列（前10个）: {available_cols}..."
+                )
+            print(f"[DataEngine]   连接键: {join_key}")
+            result = upb.join(luhf, left_on=upb_key, right_on=luhf_key, how=how)
 
         print(f"[DataEngine] 联合查询完成: {result.height} 行, {result.width} 列")
 
@@ -628,20 +765,33 @@ class DataEngine:
         upb = self.upb
         luhf = self.luhf
 
-        upb_key = standardize_column_name(join_key, upb)
-        luhf_key = standardize_column_name(join_key, luhf)
+        join_config = self.adapter.join_config if self.adapter.is_active else {}
 
-        if upb_key not in upb.columns or luhf_key not in luhf.columns:
-            return {
-                "error": f"连接键 '{join_key}' 在一个或两个数据集中不存在",
-                "upb_columns": list(upb.columns[:20]),
-                "luhf_columns": list(luhf.columns[:20])
-            }
+        if join_config.get("strategy") == "composite":
+            composite_keys = join_config.get("composite_keys", [])
+            upb_keys = upb.select(
+                pl.concat_str([pl.col(k) for k in composite_keys], separator="|||").alias("_key")
+            )["_key"]
+            luhf_keys = luhf.select(
+                pl.concat_str([pl.col(k) for k in composite_keys], separator="|||").alias("_key")
+            )["_key"]
+            upb_unique = upb_keys.unique().len()
+            luhf_unique = luhf_keys.unique().len()
+            common_keys = set(upb_keys.to_list()) & set(luhf_keys.to_list())
+        else:
+            upb_key = standardize_column_name(join_key, upb, self.adapter)
+            luhf_key = standardize_column_name(join_key, luhf, self.adapter)
 
-        upb_unique = upb[upb_key].unique().len()
-        luhf_unique = luhf[luhf_key].unique().len()
+            if upb_key not in upb.columns or luhf_key not in luhf.columns:
+                return {
+                    "error": f"连接键 '{join_key}' 在一个或两个数据集中不存在",
+                    "upb_columns": list(upb.columns[:20]),
+                    "luhf_columns": list(luhf.columns[:20])
+                }
 
-        common_keys = set(upb[upb_key].to_list()) & set(luhf[luhf_key].to_list())
+            upb_unique = upb[upb_key].unique().len()
+            luhf_unique = luhf[luhf_key].unique().len()
+            common_keys = set(upb[upb_key].to_list()) & set(luhf[luhf_key].to_list())
 
         return {
             "upb_total": upb.height,

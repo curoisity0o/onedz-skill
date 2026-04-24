@@ -43,19 +43,29 @@
 
 本技能包使用 OneDZ 数据库的 **.csv 格式**数据文件，需要单独下载并放置到本地。
 
-**当前适配版本: `onedz_csv_20260328`**
+**适配数据集版本:**
 
-| 文件 | 记录数 | 列数 | 大小 |
-|------|--------|------|------|
-| zircon_upb.csv | ~192 万 | 72 | ~1.2 GB |
-| zircon_luhf.csv | ~27 万 | 86 | ~164 MB |
+| 版本 | 格式 | 来源 |
+|------|------|------|
+| `onedz_csv_20260328` (v1) | 单文件 zircon_upb.csv / zircon_luhf.csv | [Zenodo #17407937](https://zenodo.org/records/17407937) |
+| `onedz_datasets_csv` (v2) | 分片 Total_UPb_split_parts/ + Total_LuHf_split_parts/ | [Zenodo #19690702](https://zenodo.org/records/19690702) |
+
+两个版本均已适配，通过 adapter 自动检测列名映射（v2: 31 个 U-Pb + 16 个 Lu-Hf 列名映射）。
+
+| 数据集 | 文件 | 记录数 | 大小 |
+|--------|------|--------|------|
+| v1 | zircon_upb.csv | ~192 万 | ~1.2 GB |
+| v1 | zircon_luhf.csv | ~27 万 | ~164 MB |
+| v2 | Total_UPb_split_parts/ (22 parts) | ~192 万 | ~1.3 GB |
+| v2 | Total_LuHf_split_parts/ (3 parts) | ~27 万 | ~147 MB |
 
 **下载:**
-- **[GitHub Release (推荐)](https://github.com/curoisity0o/onedz-skill/releases/tag/dataset-v20260328)** — 已修正格式的版本，解压即用
+- **[GitHub Release (v1 推荐)](https://github.com/curoisity0o/onedz-skill/releases/tag/dataset-v20260328)** — 已修正格式的 v1 版本，解压即用
+- **[Zenodo v2](https://zenodo.org/records/19690702)** — 新版分片格式数据集
 - OneDZ 官网: https://onedz.top/DownloadPage.html
-- Zenodo (原始版本): https://zenodo.org/records/17407937
+- Zenodo v1 (原始版本): https://zenodo.org/records/17407937
 
-> **注意**: 当前 Skill 代码基于 `onedz_csv_20260328` 版本的列名（如 `Best Age`、`Depos.Age (Period)`、`Class-1 Rock Type`）。新版数据集（Zenodo #19690702）已重命名列（如 `Best_age`、`Depos_Age_Period`）并改为分片格式，需要适配后才能使用。可使用 `/scripts/fix_dataset.py` 对下载的数据集进行格式修正。
+> **已知问题**: v2 数据集 Lu-Hf 分片中存在编码损坏（约 200 个 εHf(t) 负值被乱码替代），程序加载时会自动输出诊断信息。
 
 ## 技能架构
 
@@ -155,6 +165,7 @@ export ONEDZ_DATA_PATH="/path/to/onedz_csv/"
 
 ## 版本
 
+- **v1.3.0** (2026-04-24): 新数据集 (Zenodo #19690702) 分片格式适配；脏数据诊断输出；峰值检测诊断
 - **v1.2.0** (2026-04-20): 重组结构，新增示例系统、分组对比模板
 - **v1.1.0** (2026-04-17): Phase 5 可视化，CLI 增强
 - **v1.0.0** (2026-04-16): 初始发布
@@ -212,19 +223,29 @@ This skill wraps the OneDZ database's **.csv format** data (1.92M U-Pb records, 
 
 This skill uses the OneDZ database in **.csv format**, which must be downloaded separately.
 
-**Currently adapted version: `onedz_csv_20260328`**
+**Adapted dataset versions:**
 
-| File | Records | Columns | Size |
-|------|---------|---------|------|
-| zircon_upb.csv | ~1.92M | 72 | ~1.2 GB |
-| zircon_luhf.csv | ~270K | 86 | ~164 MB |
+| Version | Format | Source |
+|---------|--------|--------|
+| `onedz_csv_20260328` (v1) | Single files zircon_upb.csv / zircon_luhf.csv | [Zenodo #17407937](https://zenodo.org/records/17407937) |
+| `onedz_datasets_csv` (v2) | Split parts Total_UPb_split_parts/ + Total_LuHf_split_parts/ | [Zenodo #19690702](https://zenodo.org/records/19690702) |
+
+Both versions are supported via automatic adapter-based column name mapping (v2: 31 U-Pb + 16 Lu-Hf column mappings).
+
+| Dataset | File | Records | Size |
+|---------|------|---------|------|
+| v1 | zircon_upb.csv | ~1.92M | ~1.2 GB |
+| v1 | zircon_luhf.csv | ~270K | ~164 MB |
+| v2 | Total_UPb_split_parts/ (22 parts) | ~1.92M | ~1.3 GB |
+| v2 | Total_LuHf_split_parts/ (3 parts) | ~270K | ~147 MB |
 
 **Download:**
-- **[GitHub Release (Recommended)](https://github.com/curoisity0o/onedz-skill/releases/tag/dataset-v20260328)** — Format-corrected version, ready to use after unzip
+- **[GitHub Release (v1 Recommended)](https://github.com/curoisity0o/onedz-skill/releases/tag/dataset-v20260328)** — Format-corrected v1, ready to use after unzip
+- **[Zenodo v2](https://zenodo.org/records/19690702)** — New split-file format dataset
 - OneDZ Website: https://onedz.top/DownloadPage.html
-- Zenodo (original version): https://zenodo.org/records/17407937
+- Zenodo v1 (original): https://zenodo.org/records/17407937
 
-> **Note**: The current Skill code is based on column names from `onedz_csv_20260328` (e.g., `Best Age`, `Depos.Age (Period)`, `Class-1 Rock Type`). The newer Zenodo dataset (#19690702) has renamed columns and split-file format, which is not yet supported.
+> **Known issue**: v2 Lu-Hf split files contain encoding corruption (~200 εHf(t) negative values garbled). The skill outputs diagnostic info during loading.
 
 ## Architecture
 
@@ -299,6 +320,7 @@ export ONEDZ_DATA_PATH="/path/to/onedz_csv/"
 
 ## Version
 
+- **v1.3.0** (2026-04-24): New dataset (Zenodo #19690702) split-file support; data quality diagnostics; peak detection diagnostics
 - **v1.2.0** (2026-04-20): Restructured, examples system, grouped_comparison template
 - **v1.1.0** (2026-04-17): Phase 5 visualizations, CLI
 - **v1.0.0** (2026-04-16): Initial release

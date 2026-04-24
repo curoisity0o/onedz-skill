@@ -128,6 +128,12 @@ class Analytics:
             height=height or 0,
         )
 
+        # 无峰时输出诊断信息，帮助使用者判断
+        if len(peak_indices) == 0 and len(y) > 0:
+            y_max = float(np.max(y))
+            print(f"[Analytics] 未检测到峰值 — prominence={prominence}, max(density)={y_max:.6f}")
+            print(f"  提示: 当前 prominence 阈值高于 KDE 密度最大值，可能需要调低 prominence 参数")
+
         peaks = []
         for idx in peak_indices:
             peaks.append({

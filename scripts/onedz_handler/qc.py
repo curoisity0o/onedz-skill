@@ -83,7 +83,7 @@ class QCMODULE:
 
         # 优先级 4: 从同位素比值计算
         if has_ratio:
-            calc_from_ratio = np.log(1 + pl.col(ratio_238)) / 1.55125e-10
+            calc_from_ratio = (1 + pl.col(ratio_238)).log() / 1.55125e-10
             best_age = best_age.when(
                 pl.col(age_238).is_null() & pl.col(ratio_238).is_not_null()
             ).then(calc_from_ratio)

@@ -24,6 +24,8 @@
 | Lu-Hf 同位素分析 | `luhf_analysis` | luhf_analysis.py | ⭐⭐⭐ | join_upb_luhf, compute_epsilon_hf |
 | εHf(t) 计算 | `luhf_analysis` | luhf_analysis.py | ⭐⭐⭐ | compute_epsilon_hf |
 | 地理分布图 | `age_distribution` | age_distribution.py | ⭐⭐ | plot_geographic_distribution |
+| 谐和度质量控制 | `concordance_qc` | concordance_qc.py | ⭐⭐ | compute_concordance, filter_concordance |
+| 物源综合判别 (U-Pb+Lu-Hf) | `provenance_analysis` | provenance_analysis.py | ⭐⭐⭐ | query_from_csv + engine.luhf |
 | 不确定查询参数是否有效 | **查 dataset JSON** | onedz_dataset_structure.json | - | - |
 
 ---
@@ -182,6 +184,68 @@ handler.plot_tdm(df_computed, save="tdm.png")
 
 ---
 
+### 5. concordance_qc - 谐和度质量控制
+
+**使用场景**：
+- ✅ 评估不同谐和度阈值下的数据保留率
+- ✅ 多阈值对比分析（宽松/标准/严格）
+- ✅ 数据质量评估
+
+**关键代码模式**：
+```python
+handler = OneDZHandler()
+df = handler.query_from_csv(continent="Asia", rock_class1=["detrital"])
+df_conc = handler.qc.compute_concordance(df)
+
+# 不同阈值对比
+for lo, hi in [(0.80, 1.20), (0.90, 1.10), (0.95, 1.05)]:
+    df_filt = handler.qc.filter_concordance(df_conc, concordance_min=lo, concordance_max=hi)
+    print(f"  {lo}-{hi}: {df_filt.height:,} ({df_filt.height/df.height*100:.1f}%)")
+
+handler.plot_multi_kde(age_data, save="concordance_comparison.png")
+```
+
+**文件**: `concordance_qc.py`
+
+---
+
+### 6. provenance_analysis - 物源综合判别（U-Pb + Lu-Hf）
+
+**使用场景**：
+- ✅ 综合利用 U-Pb 年龄峰和 Lu-Hf εHf(t) 判别物源
+- ✅ 古老地壳再循环 vs 新生地壳判别
+- ✅ 内存友好的两阶段分析
+
+**关键代码模式**：
+```python
+# Phase 1: U-Pb (lazy, ~0.5 GB)
+df_upb = handler.query_from_csv(country_state="China", rock_class1=["detrital"])
+df_clean = handler.clean(df_upb, concordance_min=0.90)
+result = handler.analyze(df_clean)  # peaks + summary
+
+# Free U-Pb memory
+handler.engine._upb_df = None
+gc.collect()
+
+# Phase 2: Lu-Hf (direct table, ~0.2 GB)
+handler.load(source="csv", table="global_lu-hf")
+luhf = handler.engine.luhf
+df_luhf = luhf.filter(pl.col("Country_State") == "China")
+df_valid = df_luhf.drop_nulls(subset=["εHf(t)", "U-Pb Age (Ma)"])
+
+# εHf(t) is PRE-COMPUTED in the Lu-Hf table
+eps = df_valid["εHf(t)"].cast(pl.Float64).to_numpy()
+```
+
+**重要提醒**：
+- εHf(t) 在 Lu-Hf 表中已预计算，无需再调 compute_epsilon_hf()
+- Lu-Hf 表年龄列是 "U-Pb Age (Ma)"（不是 "Best Age"）
+- 低内存机器（<16GB）必须先释放 U-Pb 再加载 Lu-Hf
+
+**文件**: `provenance_analysis.py`
+
+---
+
 ## 🔑 API 快速查找
 
 ### handler.query()
@@ -283,8 +347,10 @@ handler.plot_multi_kde(
 - `age_distribution.py` - 年龄分布（7627 字节）
 - `regional_comparison.py` - 区域对比（9533 字节）
 - `luhf_analysis.py` - Lu-Hf 分析（3055 字节）
+- `concordance_qc.py` - 谐和度质量控制（~3 KB）
+- `provenance_analysis.py` - 物源综合判别（~5 KB）
 
-总大小: ~22 KB 可复用代码
+总大小: ~30 KB 可复用代码
 
 ---
 

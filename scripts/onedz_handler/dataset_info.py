@@ -98,6 +98,11 @@ def check_dataset_exists(csv_dir) -> tuple[bool, str]:
             missing_files.append(filename)
 
     if missing_files:
+        # 检查是否为分片格式（新数据集用 Total_UPb_split_parts/ 等目录）
+        split_dirs = ["Total_UPb_split_parts", "Total_LuHf_split_parts"]
+        has_split = all((data_path / d).is_dir() for d in split_dirs)
+        if has_split:
+            return True, f"✅ 数据集验证通过（分片格式）: {csv_dir}"
         return False, f"数据目录存在，但缺少文件: {', '.join(missing_files)}\n" + DATA_DATASET_INFO
 
     return True, f"✅ 数据集验证通过: {csv_dir}"
@@ -120,6 +125,18 @@ def print_dataset_info(csv_dir):
         if luhf_file.exists():
             size_mb = luhf_file.stat().st_size / (1024 * 1024)
             print(f"  • zircon_luhf.csv: {size_mb:.1f} MB")
+
+        # 分片格式检测
+        upb_split = data_path / "Total_UPb_split_parts"
+        luhf_split = data_path / "Total_LuHf_split_parts"
+        if upb_split.is_dir():
+            n_parts = len(list(upb_split.glob("*.csv")))
+            total_mb = sum(f.stat().st_size for f in upb_split.glob("*.csv")) / (1024 * 1024)
+            print(f"  • Total_UPb_split_parts/: {n_parts} 个分片, 共 {total_mb:.1f} MB")
+        if luhf_split.is_dir():
+            n_parts = len(list(luhf_split.glob("*.csv")))
+            total_mb = sum(f.stat().st_size for f in luhf_split.glob("*.csv")) / (1024 * 1024)
+            print(f"  • Total_LuHf_split_parts/: {n_parts} 个分片, 共 {total_mb:.1f} MB")
 
         # 检测是否使用格式修正后的数据
         if not data_path.name.startswith("modified"):

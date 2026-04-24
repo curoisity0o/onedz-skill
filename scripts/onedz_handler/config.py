@@ -169,6 +169,7 @@ class OneDZConfig:
     mysql_user: str = "root"
     mysql_password: str = ""
     mysql_database: str = "onedz"
+    dataset_version: Optional[str] = None  # None = 自动检测
 
     # QC 参数
     age_cutoff_ma: float = AGE_CUTOFF_MA
