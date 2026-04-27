@@ -42,7 +42,11 @@ OneDZ Skill 需要以下 CSV 格式数据集：
   config.csv_dir = Path("/your/path/to/onedz_csv_20260328")
   handler = OneDZHandler(config=config)
 
-方法 3: 加载时指定
+方法 3: 用户配置文件（一次配置，永久生效）
+  mkdir -p ~/.onedz
+  echo '{"csv_dir": "/your/path/to/onedz_csv_20260328/modified"}' > ~/.onedz/config.json
+
+方法 4: 加载时指定
   from scripts.onedz_handler import OneDZHandler
   from pathlib import Path
 

@@ -348,13 +348,16 @@ class Analytics:
         ages_a = ages_a[~np.isnan(ages_a)]
         ages_b = ages_b[~np.isnan(ages_b)]
 
+        if len(ages_a) == 0 or len(ages_b) == 0:
+            raise ValueError("K-S 检验需要两组非空数据")
+
         statistic, p_value = stats.ks_2samp(ages_a, ages_b)
 
         return {
             "statistic": float(statistic),
             "p_value": float(p_value),
             "alpha": alpha,
-            "significant": p_value < alpha,
+            "significant": bool(p_value < alpha),
             "conclusion": (
                 f"K-S 检验: D={statistic:.4f}, p={p_value:.4e}. "
                 f"{'拒绝 H0（分布显著不同）' if p_value < alpha else '不能拒绝 H0（分布无显著差异）'}"

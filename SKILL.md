@@ -8,7 +8,16 @@ description:
   filtering, probability density plots, peak detection in age distributions, or exporting
   geochemical data to GeoJSON/Shapefile formats."
 version: 1.3.0
+languages: [zh, en]
 ---
+
+<!-- ================================================================= -->
+<!--                         中文版 (ZH)                                -->
+<!-- ================================================================= -->
+
+# OneDZ — 全球碎屑锆石数据库分析
+
+分析全球最大的碎屑锆石数据库（Li et al., 2025），包含 192 万条 U-Pb 记录和 27 万条 Lu-Hf 记录。提供从数据加载、科学级数据清洗、统计分析、出版级可视化到多格式导出的完整工作流程。
 
 ## 🤖 AI 使用指南（必读）
 
@@ -487,74 +496,304 @@ AI: 查 examples_index.md → regional_comparison
 
 ---
 
+## 快速开始
+
+### 数据集配置
+
+**OneDZ 需要 CSV 格式数据集** (zircon_upb.csv, zircon_luhf.csv)。
+
+**下载数据**:
+- 官方网站: https://onedz.top/DownloadPage.html
+- Zenodo: https://zenodo.org/records/17407937
+
+**配置数据路径**:
+```bash
+# 方法 1: 环境变量（推荐）
+export ONEDZ_DATA_PATH="/your/path/to/onedz_csv_20260328/"
+
+# 方法 2: 用户配置文件（永久生效）
+mkdir -p ~/.onedz
+echo '{"csv_dir": "/your/path/to/onedz_csv_20260328/modified"}' > ~/.onedz/config.json
+
+# 方法 3: 在代码中指定
+handler = OneDZHandler(config=OneDZConfig(csv_dir=Path("/your/path/")))
+```
+
+初始化 `OneDZHandler()` 时会检查数据集，如未找到会显示友好的提示信息。
+
+### 基本用法
+
+```python
+from scripts.onedz_handler import OneDZHandler
+
+# 初始化
+handler = OneDZHandler()
+
+# 加载和查询
+handler.load()
+df = handler.query(periods=["Cretaceous"], continent="Asia")
+
+# 清洗和可视化
+df_clean = handler.clean(df)
+handler.plot_age(df_clean, mode="kde", save="kde.png")
+
+# 导出
+handler.export(df_clean, "output.csv")
+```
+
+## 核心工作流程
+
+1. **初始化 Handler** - 创建 `OneDZHandler()` 实例
+2. **加载数据** - 使用 `handler.load()` 加载 U-Pb 或 Lu-Hf 表
+3. **查询数据** - 按时期、岩石类型、位置、年龄范围等过滤
+4. **清洗数据** - 应用质量控制（谐和度、误差标准化）
+5. **分析** - 统计分析、峰值检测、K-S 检验
+6. **可视化** - 生成 KDE 图、εHf 图、统计图表
+7. **导出** - 保存为 CSV、Excel、GeoJSON 或 Shapefile
+
+## 可用脚本
+
+### 环境检查
+验证安装：
+```bash
+python scripts/environment_check.py
+```
+
+### 数据探索
+探索数据集：
+```bash
+python scripts/data_explorer.py
+```
+
+### CLI 工具
+命令行接口用于批量处理：
+```bash
+onedz query --period Cretaceous --continent Asia -o data.csv
+onedz clean --input data.csv -o clean.csv
+onedz plot --input clean.csv --plot-type kde -o kde.png
+```
+
+## 示例工作流
+
+### 示例 1: 年龄分布分析
+
+```python
+from scripts.onedz_handler import OneDZHandler
+
+handler = OneDZHandler()
+handler.load()
+df = handler.query(periods=["Cretaceous"], continent="Asia")
+df_clean = handler.clean(df, concordance_min=0.90)
+handler.plot_age(df_clean, mode="kde", save="cretaceous_kde.png")
+handler.export(df_clean, "cretaceous_data.csv")
+```
+
+### 示例 2: Lu-Hf 同位素演化
+
+```python
+handler.load(source="csv", table="global_u-pb")
+handler.load(source="csv", table="global_lu-hf")
+df_joined = handler.join_upb_luhf()
+df_computed = handler.compute_epsilon_hf(df_joined)
+handler.plot_epsilon_hf(df_computed, save="epsilon_hf.png")
+```
+
+### 示例 3: 区域对比
+
+```python
+df_asia = handler.query(periods=["Cretaceous"], continent="Asia")
+df_europe = handler.query(periods=["Cretaceous"], continent="Europe")
+
+ages_asia = handler.clean(df_asia)["Best Age"].drop_nulls().to_numpy()
+ages_europe = handler.clean(df_europe)["Best Age"].drop_nulls().to_numpy()
+
+ks_result = handler.ks_test(ages_asia, ages_europe)
+print(f"K-S p值: {ks_result['p_value']:.3e}")
+
+handler.plot_multi_kde(
+    {"Asia": ages_asia, "Europe": ages_europe},
+    save="comparison.png"
+)
+```
+
+### 示例 4: 统计可视化
+
+```python
+handler.load()
+
+# 岩石类型统计
+handler.viz.plot_rock_type_statistics(
+    handler.data,
+    class_level="Class1",
+    plot_type="bar",
+    save="rock_stats.png"
+)
+
+# 地理分布
+handler.viz.plot_geographic_distribution(
+    handler.data,
+    geo_level="continent",
+    save="geo_dist.png"
+)
+
+# 时间分布
+handler.viz.plot_temporal_distribution(
+    handler.data,
+    save="temporal_dist.png"
+)
+```
+
+## 何时使用此 Skill
+
+当用户提到以下内容时触发此 Skill：
+- **锆石分析**: 碎屑锆石、U-Pb 定年、Lu-Hf 同位素
+- **年龄分布**: KDE 图、概率密度图、峰值检测
+- **数据过滤**: 谐和度、不一致性、地质时期
+- **同位素地球化学**: εHf(t) 演化、Hf 模式年龄
+- **区域分析**: 地理过滤、大洲级研究
+- **导出格式**: GeoJSON、Shapefile、Excel 导出
+- **统计图形**: 岩石类型统计、分布图
+
+## 文档
+
+### 参考文档
+- **[环境设置](references/environment.md)** - 依赖和安装
+- **[数据集指南](references/dataset.md)** - 数据结构和位置
+- **[API 参考](references/api_reference.md)** - 完整方法文档
+- **[工作流](references/workflows.md)** - 分步示例
+- **[CLI 指南](references/cli_guide.md)** - 命令行工具文档
+
+### 示例
+查看 `assets/examples/` 获取现成的脚本：
+- **[basic_query.py](assets/examples/basic_query.py)** - 简单数据查询
+- **[age_distribution.py](assets/examples/age_distribution.py)** - 年龄分布分析
+- **[luhf_analysis.py](assets/examples/luhf_analysis.py)** - Lu-Hf 同位素分析
+- **[regional_comparison.py](assets/examples/regional_comparison.py)** - 区域对比
+
+## 数据引用
+
+使用此 Skill 的结果时，请引用：
+
+**Li, K., Hu, X., Chai, R., Yang, J. et al. (2025)**. OneDZ: A Global Detrital Zircon Database and Implications for Constructing Giant Geoscience Database. *Earth System Science Data*.
+
+- GitHub: https://github.com/KeranLi/Global-Detrital-Zircon
+- Zenodo: https://zenodo.org/records/17407937
+
+## 性能说明
+
+- **U-Pb 表**: 约 192 万条记录，加载时间约 30 秒
+- **Lu-Hf 表**: 约 27 万条记录，加载时间约 5 秒
+- **查询**: 索引列上亚秒级
+- **KDE 计算**: 10 万年龄 <1 秒
+- **导出**: CSV 最快，Shapefile 最慢
+
+对于大数据集（>50 万条记录），在查询中使用 `max_records` 参数。
+
+## 版本历史
+
+- **v1.2.0** (2026-04-20): 重构为标准格式，添加 references/ 和 assets/
+- **v1.1.0** (2026-04-17): 新增 Phase 5 统计可视化、CLI 增强
+- **v1.0.0** (2026-04-16): 初始版本，包含核心功能
+
+<!-- ================================================================= -->
+<!--                          English (EN)                              -->
+<!-- ================================================================= -->
+
 # OneDZ — Global Detrital Zircon Database Analysis
 
 Analyzes the world's largest detrital zircon database (Li et al., 2025) with 1.92M U-Pb records and 270K Lu-Hf records. Provides complete workflow from data loading through scientific-grade cleaning, statistical analysis, publication-quality visualizations, and multi-format export.
 
-## Quick Start
+## AI Usage Guide (Required Reading)
 
-### Installation
+> ⚠️ **Important**: Before generating any code, follow the steps below.
+> The goal is to improve code generation accuracy and avoid common pitfalls.
 
-See [references/environment.md](references/environment.md) for detailed setup instructions.
+### Step 0: Create Task Working Directory
+
+**For every analysis task, create an isolated task directory to keep outputs separate.**
+
+```python
+from datetime import datetime
+from pathlib import Path
+
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+TASK_NAME = "australia_analysis"  # ← change per task
+TASK_DIR = Path.cwd() / f"{TASK_NAME}_{timestamp}"
+TASK_DIR.mkdir(parents=True, exist_ok=True)
+config = OneDZConfig(output_dir=TASK_DIR, use_timestamp_output=False)
+handler = OneDZHandler(config=config)
+```
+
+### Step 1: Match Example Code (Highest Priority)
 
 ```bash
-cd /path/to/my-OneDZ-skill
-pip install -r requirements.txt
+# Open the example index
+assets/examples/examples_index.md
 ```
+
+Copy an existing template, modify parameters to fit the user request. **Do not write from scratch.**
+
+### Step 1.5: Check Dataset Structure
+
+When unsure about parameter names (country, period, rock type), read `assets/examples/onedz_dataset_structure.json` instead of loading the 1.5GB CSV.
+
+### Step 2: Read API Docs (Only When Needed)
+
+Priority: `references/quick_reference.md` > `references/api_reference.md` > `references/workflows.md`
+
+### Step 3: Mandatory Rules
+
+1. Use `OneDZHandler` API, never access internals directly
+2. Always validate query results (`df.height > 0`)
+3. Use correct column names (e.g., `"Best Age"`, `"Country_State"`)
+4. Use English labels for plot legends (avoids font issues)
+5. Default to lazy queries (`query_from_csv`) to avoid OOM
+6. **All conclusions must come from actual script output** — never fabricate results
+
+### Step 4: Prohibited Actions
+
+- ❌ Bypassing OneDZHandler to use polars directly
+- ❌ Assuming query results are always non-empty
+- ❌ Using Chinese labels in plots
+- ❌ Writing APIs from memory instead of checking docs
+
+### Step 5: Error Handling Patterns
+
+```python
+def safe_query(handler, **kwargs):
+    df = handler.query(**kwargs)
+    if df.height == 0:
+        print(f"⚠️ No results: {kwargs}")
+        return None
+    return df
+```
+
+## Quick Start
 
 ### Dataset Setup
 
-**OneDZ requires CSV format dataset** (zircon_upb.csv, zircon_luhf.csv).
-
-**Download**:
-- Official: https://onedz.top/DownloadPage.html
-- Zenodo: https://zenodo.org/records/17407937
+**Download**: https://onedz.top/DownloadPage.html or Zenodo: https://zenodo.org/records/17407937
 
 **Configure data path**:
 ```bash
-# Method 1: Environment variable (recommended)
+# Method 1: Environment variable
 export ONEDZ_DATA_PATH="/your/path/to/onedz_csv_20260328/"
 
-# Method 2: Specify in code
-handler = OneDZHandler(config=OneDZConfig(csv_dir=Path("/your/path/")))
+# Method 2: User config file (persistent)
+mkdir -p ~/.onedz
+echo '{"csv_dir": "/your/path/to/onedz_csv_20260328/modified"}' > ~/.onedz/config.json
 ```
-
-When you initialize `OneDZHandler()`, it will check for the dataset and show helpful instructions if not found.
-
-**Default data path** (in `scripts/onedz_handler/config.py`) points to the `modified/` subdirectory which contains format-corrected data. If this path does not exist, see the instructions below.
-
-### Dataset Path Configuration (for Claude)
-
-> **IMPORTANT**: The first time you use this skill, you MUST verify the dataset exists at the default path.
-
-When the skill is invoked and the dataset is not found at the default path:
-
-1. **Read** `scripts/onedz_handler/config.py` to see the current `_DEFAULT_DATA_DIR` value
-2. **Ask the user** for the correct dataset directory path (e.g., "请提供 OneDZ 数据集 (zircon_upb.csv, zircon_luhf.csv) 所在的目录路径")
-3. **Update** `scripts/onedz_handler/config.py`: change `_DEFAULT_DATA_DIR` to the user-provided path
-4. **Retry** the task with the corrected path
-
-The dataset directory must contain at minimum:
-- `zircon_upb.csv` (U-Pb age data)
-- `zircon_luhf.csv` (Lu-Hf isotope data)
 
 ### Basic Usage
 
 ```python
 from scripts.onedz_handler import OneDZHandler
 
-# Initialize
 handler = OneDZHandler()
-
-# Load and query
 handler.load()
 df = handler.query(periods=["Cretaceous"], continent="Asia")
-
-# Clean and visualize
 df_clean = handler.clean(df)
 handler.plot_age(df_clean, mode="kde", save="kde.png")
-
-# Export
 handler.export(df_clean, "output.csv")
 ```
 
@@ -568,35 +807,11 @@ handler.export(df_clean, "output.csv")
 6. **Visualize** - Generate KDE plots, εHf diagrams, statistical charts
 7. **Export** - Save to CSV, Excel, GeoJSON, or Shapefile
 
-## Available Scripts
-
-### Environment Check
-Verify your installation:
-```bash
-python scripts/environment_check.py
-```
-
-### Data Explorer
-Explore the dataset:
-```bash
-python scripts/data_explorer.py
-```
-
-### CLI Tool
-Command-line interface for batch processing:
-```bash
-onedz query --period Cretaceous --continent Asia -o data.csv
-onedz clean --input data.csv -o clean.csv
-onedz plot --input clean.csv --plot-type kde -o kde.png
-```
-
 ## Example Workflows
 
-### Example 1: Age Distribution Analysis
+### Example 1: Age Distribution
 
 ```python
-from scripts.onedz_handler import OneDZHandler
-
 handler = OneDZHandler()
 handler.load()
 df = handler.query(periods=["Cretaceous"], continent="Asia")
@@ -620,78 +835,53 @@ handler.plot_epsilon_hf(df_computed, save="epsilon_hf.png")
 ```python
 df_asia = handler.query(periods=["Cretaceous"], continent="Asia")
 df_europe = handler.query(periods=["Cretaceous"], continent="Europe")
-
 ages_asia = handler.clean(df_asia)["Best Age"].drop_nulls().to_numpy()
 ages_europe = handler.clean(df_europe)["Best Age"].drop_nulls().to_numpy()
-
 ks_result = handler.ks_test(ages_asia, ages_europe)
-print(f"K-S p-value: {ks_result['p_value']:.3e}")
-
-handler.plot_multi_kde(
-    {"Asia": ages_asia, "Europe": ages_europe},
-    save="comparison.png"
-)
+handler.plot_multi_kde({"Asia": ages_asia, "Europe": ages_europe}, save="comparison.png")
 ```
 
-### Example 4: Statistical Visualizations (Phase 5)
+### Example 4: Statistical Visualizations
 
 ```python
 handler.load()
-
-# Rock type statistics
-handler.viz.plot_rock_type_statistics(
-    handler.data,
-    class_level="Class1",
-    plot_type="bar",
-    save="rock_stats.png"
-)
-
-# Geographic distribution
-handler.viz.plot_geographic_distribution(
-    handler.data,
-    geo_level="continent",
-    save="geo_dist.png"
-)
-
-# Temporal distribution
-handler.viz.plot_temporal_distribution(
-    handler.data,
-    save="temporal_dist.png"
-)
+handler.viz.plot_rock_type_statistics(handler.data, class_level="Class1", save="rock_stats.png")
+handler.viz.plot_geographic_distribution(handler.data, geo_level="continent", save="geo_dist.png")
+handler.viz.plot_temporal_distribution(handler.data, save="temporal_dist.png")
 ```
 
 ## When to Use This Skill
 
-Trigger this skill when users mention:
 - **Zircon analysis**: detrital zircon, U-Pb dating, Lu-Hf isotopes
 - **Age distributions**: KDE plots, probability density, peak detection
 - **Data filtering**: concordance, discordance, geological periods
 - **Isotope geochemistry**: εHf(t) evolution, Hf model ages
 - **Regional analysis**: geographic filtering, continental studies
 - **Export formats**: GeoJSON, Shapefile, Excel export
-- **Statistical graphics**: rock type statistics, distributions
+
+## Available Scripts
+
+```bash
+# Environment check
+python scripts/environment_check.py
+
+# CLI tool
+onedz query --period Cretaceous --continent Asia -o data.csv
+onedz clean --input data.csv -o clean.csv
+onedz plot --input clean.csv --plot-type kde -o kde.png
+```
 
 ## Documentation
 
-### Reference Documentation
 - **[Environment Setup](references/environment.md)** - Dependencies and installation
 - **[Dataset Guide](references/dataset.md)** - Data structure and locations
 - **[API Reference](references/api_reference.md)** - Complete method documentation
 - **[Workflows](references/workflows.md)** - Step-by-step examples
 - **[CLI Guide](references/cli_guide.md)** - Command-line tool documentation
 
-### Examples
-See `assets/examples/` for ready-to-run scripts:
-- **[basic_query.py](assets/examples/basic_query.py)** - Simple data query
-- **[age_distribution.py](assets/examples/age_distribution.py)** - Age distribution analysis
-- **[luhf_analysis.py](assets/examples/luhf_analysis.py)** - Lu-Hf isotope analysis
-- **[regional_comparison.py](assets/examples/regional_comparison.py)** - Regional comparison
-
 ## Data Citation
 
-When using results from this skill, cite:
-
-**Li, K., Hu, X., Chai, R., Yang, J. et al. (2025)**. OneDZ: A Global Detrital Zircon Database and Implications for Constructing Giant Geoscience Database. *Earth System Science Data*.
+**Li, K., Hu, X., Chai, R., Yang, J. et al. (2025)**. OneDZ: A Global Detrital Zircon Database... *Earth System Science Data*.
 
 - GitHub: https://github.com/KeranLi/Global-Detrital-Zircon
 - Zenodo: https://zenodo.org/records/17407937
@@ -700,11 +890,8 @@ When using results from this skill, cite:
 
 - **U-Pb table**: ~1.92M records, loads in ~30 seconds
 - **Lu-Hf table**: ~270K records, loads in ~5 seconds
-- **Queries**: Sub-second on indexed columns
 - **KDE computation**: <1 second for 100K ages
-- **Exports**: CSV is fastest, Shapefile slowest
-
-For large datasets (>500K records), use `max_records` parameter in queries.
+- Use `max_records` parameter for datasets >500K records
 
 ## Version History
 

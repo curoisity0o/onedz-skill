@@ -91,6 +91,22 @@ class OneDZHandler:
 
         # 检查数据集（非静默模式）
         if not silent:
+            # 检测是否使用默认占位符路径
+            if not self.config.csv_dir.exists():
+                guessed_placeholder = (
+                    self.config.csv_dir.name == "modified"
+                    and not self.config.csv_dir.parent.exists()
+                )
+                if guessed_placeholder or "path/to" in str(self.config.csv_dir):
+                    print("\n⚠️  数据集路径尚未配置（当前为默认占位符）")
+                    print("   请通过以下任一方式配置：")
+                    print('   1. 设置环境变量：export ONEDZ_DATA_PATH="/your/actual/path/onedz_csv_20260328/modified"')
+                    print("   2. 写入用户配置（永久生效）：")
+                    print("      mkdir -p ~/.onedz")
+                    print('      echo \'{"csv_dir": "/your/actual/path/onedz_csv_20260328/modified"}\' > ~/.onedz/config.json')
+                    print("   3. 代码中指定：OneDZConfig(csv_dir=Path(\"/your/actual/path/onedz_csv_20260328\"))")
+                    print()
+
             exists, message = check_dataset_exists(self.config.csv_dir)
             if exists:
                 print_dataset_info(self.config.csv_dir)

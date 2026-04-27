@@ -5,17 +5,69 @@ OneDZ Handler — 全局配置与常量定义
 """
 
 import os
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 
 # ──────────────────────────── 数据路径 ────────────────────────────
-# 优先级：ONEDZ_DATA_PATH 环境变量 > 默认路径
-# 默认指向 modified/ 子目录（格式修正后的数据）
-# 如果 modified/ 不存在，skill 会提示用户指定路径并自动写入此处
-_DEFAULT_DATA_DIR = "/home/zry/my_earth/data/raw/OneDZ/onedz_csv_20260328/modified"
-DEFAULT_CSV_DIR = Path(os.getenv("ONEDZ_DATA_PATH", _DEFAULT_DATA_DIR))
+# 优先级：构造参数 > 环境变量 > 用户配置文件 > 默认占位符
+#
+# 默认占位符路径（首次使用时需要配置）：
+#   1. 设置环境变量: export ONEDZ_DATA_PATH="/your/path/onedz_csv_20260328/modified"
+#   2. 写入用户配置: mkdir -p ~/.onedz && echo '{"csv_dir": "/your/path"}' > ~/.onedz/config.json
+#   3. 代码中指定: OneDZConfig(csv_dir=Path("/your/path"))
+#
+# 数据集目录至少包含：
+#   - zircon_upb.csv  (U-Pb 年龄数据，约 1.2 GB)
+#   - zircon_luhf.csv (Lu-Hf 同位素数据，约 164 MB)
+_DEFAULT_DATA_DIR = "/path/to/onedz_csv_20260328/modified"
+
+# 用户级配置文件
+USER_CONFIG_DIR = Path.home() / ".onedz"
+USER_CONFIG_PATH = USER_CONFIG_DIR / "config.json"
+
+
+def load_user_config() -> dict:
+    """读取用户级配置文件 ~/.onedz/config.json。"""
+    if USER_CONFIG_PATH.exists():
+        try:
+            return json.loads(USER_CONFIG_PATH.read_text()) or {}
+        except (json.JSONDecodeError, OSError):
+            return {}
+    return {}
+
+
+def resolve_data_dir() -> Path:
+    """
+    按优先级解析数据集目录。
+
+    Returns
+    -------
+    Path
+        解析后的数据集目录路径
+    """
+    env_dir = os.getenv("ONEDZ_DATA_PATH")
+    if env_dir:
+        return Path(env_dir)
+    user_cfg = load_user_config()
+    if "csv_dir" in user_cfg:
+        return Path(user_cfg["csv_dir"])
+    return Path(_DEFAULT_DATA_DIR)
+
+
+def save_user_config(csv_dir: str) -> None:
+    """
+    保存数据集路径到用户配置文件 ~/.onedz/config.json。
+    用户只需配置一次，后续自动加载。
+    """
+    USER_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    USER_CONFIG_PATH.write_text(json.dumps({"csv_dir": csv_dir}, indent=2))
+    print(f"[Config] 已保存数据集路径到: {USER_CONFIG_PATH}")
+
+
+DEFAULT_CSV_DIR = resolve_data_dir()
 ZENODO_DOI = "10.5281/zenodo.17407937"
 ZENODO_URL = "https://zenodo.org/records/17407937"
 ONEDZ_DOWNLOAD_PAGE = "https://onedz.top/DownloadPage.html"
