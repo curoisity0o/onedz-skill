@@ -1,6 +1,6 @@
 # OneDZ API 快速参考（AI 专用）
 
-> **最后更新**: 2026-04-20
+> **最后更新**: 2026-04-28
 > **用途**: AI 生成代码时的快速查询手册
 
 ---
@@ -446,6 +446,7 @@ handler.plot_age(df_clean, mode="kde", show_peaks=True, save="kde.png")
 | 分析年龄分布 | `handler.analyze()` + `plot_age()` | age_distribution |
 | 计算谐和度 | `handler.clean()` | all examples |
 | 分析 Hf 同位素 | `compute_epsilon_hf()` | luhf_analysis |
+| 生成分析报告 | `AnalysisContext` + `ReportGenerator` | report_generation |
 | 导出数据 | `handler.export()` | basic_query |
 
 ---

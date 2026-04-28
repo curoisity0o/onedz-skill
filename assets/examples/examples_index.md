@@ -2,8 +2,8 @@
 
 > 💡 **AI 使用指南**: 当用户提出需求时，先查找此文件匹配最相关的 example，然后读取对应的 .py 文件参考实现。
 
-> **最后更新**: 2026-04-22
-> **版本**: 1.1.0
+> **最后更新**: 2026-04-28
+> **版本**: 1.2.0
 
 ---
 
@@ -27,6 +27,10 @@
 | 谐和度质量控制 | `concordance_qc` | concordance_qc.py | ⭐⭐ | compute_concordance, filter_concordance |
 | 物源综合判别 (U-Pb+Lu-Hf) | `provenance_analysis` | provenance_analysis.py | ⭐⭐⭐ | query_from_csv + engine.luhf |
 | 不确定查询参数是否有效 | **查 dataset JSON** | onedz_dataset_structure.json | - | - |
+| 生成多图表综合分析报告 | `report_generation` | report_generation.py | ⭐⭐⭐⭐ | AnalysisContext, ReportGenerator, add_figure, add_table, add_code_cell |
+| 出版级 HTML 报告输出 | `report_generation` | report_generation.py | ⭐⭐⭐⭐ | ReportGenerator().generate(), .to_html() |
+| 交互式 Plotly 嵌入报告 | `report_generation` | report_generation.py | ⭐⭐⭐⭐ | add_code_cell (Plotly code) |
+| 自定义图表组合到报告 | `report_generation` | report_generation.py | ⭐⭐⭐⭐ | AnalysisContext 所有 add_* 方法 |
 
 ---
 
@@ -246,6 +250,44 @@ eps = df_valid["εHf(t)"].cast(pl.Float64).to_numpy()
 
 ---
 
+### 7. report_generation - 综合分析报告生成（⭐⭐⭐⭐ 高级）
+
+**核心思想**：分析脚本控制 ALL 内容，ReportGenerator 只是格式化层——无硬编码图表类型。
+
+**使用场景**：
+- ✅ 将多个图表、表格、代码输出打包为专业报告
+- ✅ 生成出版级 HTML 报告（含 CSS 样式、图片 Base64 内嵌）
+- ✅ 在报告中嵌入交互式 Plotly 图表
+- ✅ 工作汇报/论文支撑材料
+
+**关键模式**：
+```python
+from scripts.report_generator import AnalysisContext, ReportGenerator
+
+# 1. 创建上下文
+ctx = AnalysisContext(
+    title="分析标题",
+    task_name="your_task",
+    description="分析内容说明",
+)
+
+# 2. 添加内容（类型不限）
+ctx.add_markdown("## 章节标题")
+ctx.add_figure("path/to/figure.png", "图标题（自动居中）")
+ctx.add_table(headers=["Col1", "Col2"], rows=[["a", "1"]], title="表格标题")
+ctx.add_code_cell("print('hello')", outputs=[...])
+ctx.add_finding("核心发现")
+
+# 3. 生成报告
+gen = ReportGenerator(ctx)
+nb_path = gen.generate(output_dir=".")
+html_path = gen.to_html(nb_path)
+```
+
+**文件**: `report_generation.py`
+
+---
+
 ## 🔑 API 快速查找
 
 ### handler.query()
@@ -349,6 +391,7 @@ handler.plot_multi_kde(
 - `luhf_analysis.py` - Lu-Hf 分析（3055 字节）
 - `concordance_qc.py` - 谐和度质量控制（~3 KB）
 - `provenance_analysis.py` - 物源综合判别（~5 KB）
+- `report_generation.py` - 综合分析报告生成（~25 KB）
 
 总大小: ~30 KB 可复用代码
 

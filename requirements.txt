@@ -1,0 +1,20 @@
+# OneDZ Global Detrital Zircon Database Analysis
+# Core dependencies
+polars>=0.20.0
+numpy>=1.24.0
+scipy>=1.11.0
+matplotlib>=3.7.0
+
+# Report generation (optional, for .ipynb/.html output)
+nbformat>=5.9.0
+jupyter>=1.0.0
+plotly>=5.15.0
+
+# CLI
+click>=8.0.0
+
+# Configuration
+pyyaml>=6.0
+
+# Utilities
+tqdm>=4.65.0

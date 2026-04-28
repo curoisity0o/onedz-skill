@@ -7,7 +7,7 @@ description:
   or geological statistical analysis of zircon ages. Also triggers for queries about zircon data
   filtering, probability density plots, peak detection in age distributions, or exporting
   geochemical data to GeoJSON/Shapefile formats."
-version: 1.3.0
+version: 1.4.0
 languages: [zh, en]
 ---
 
@@ -382,6 +382,62 @@ handler.plot_age(df_clean, mode="kde", save="output.png")
 
 ---
 
+### 🎯 步骤 7: 生成交互式报告（可选）
+
+完成分析后，可生成 Jupyter Notebook 和 HTML 报告，用于工作汇报和结果展示。
+
+#### 7.1 基本用法
+
+报告生成器是数据驱动的——**分析脚本决定放什么内容，生成器只负责排版**。
+通过 `AnalysisContext` 按顺序添加内容块：
+
+```python
+from scripts.report_generator import AnalysisContext, ReportGenerator
+
+# 1. 创建 context
+ctx = AnalysisContext(
+    title="Your Analysis Title",
+    task_name="your_task",
+    description="What was analyzed.",
+)
+ctx.global_record_count = 2_425_749  # 会生成自动数据加载 cell
+
+# 2. 按顺序添加内容（任意组合，不限类型）
+ctx.add_markdown("## 1. 思考过程\\n...")       # markdown 说明
+ctx.add_code_cell("print('hello')")            # 代码 cell
+ctx.add_code_cell("plot_kde(data)",            # 代码 cell + 预置输出
+                  outputs=["KDE generated"])
+ctx.add_figure("path/to/kde.png", "KDE图")     # 嵌入图片（任何图表类型）
+ctx.add_table(["指标", "值"], [["N", "100"]], "统计表")
+ctx.add_finding("核心发现")                     # 结论要点
+
+# 3. 生成
+gen = ReportGenerator(ctx)
+nb_path = gen.generate(output_dir=".")         # → .ipynb
+html_path = gen.to_html(nb_path)               # → .html (可选)
+```
+
+#### 7.2 生成器 vs 分析脚本的职责
+
+| 生成器负责 | 分析脚本负责 |
+|-----------|------------|
+| 创建 Notebook 结构 (.ipynb) | 提供所有内容（markdown / code / figures） |
+| 标题页 + 页脚 | 决定放哪些图表（KDE / εHf / 谐和度 / ROC / ...） |
+| 数据加载 cell（可选） | 决定报告结构和章节划分 |
+| 结论页（汇总 findings） | 提供核心结论 |
+| HTML 转换（nbconvert） | 提供图片路径和表格数据 |
+
+> **核心设计**：`AnalysisContext` 不假设任何图表类型——同一个生成器可用于 age_distribution 的 KDE 图、luhf_analysis 的 εHf 图、regional_comparison 的对比图等所有场景。
+
+#### 7.3 依赖
+
+```bash
+pip install nbformat        # Notebook 生成（必需）
+pip install jupyter nbconvert  # HTML 转换（可选）
+```
+
+---
+
 ### 📖 文档查找优先级
 
 ```
@@ -550,6 +606,7 @@ handler.export(df_clean, "output.csv")
 5. **分析** - 统计分析、峰值检测、K-S 检验
 6. **可视化** - 生成 KDE 图、εHf 图、统计图表
 7. **导出** - 保存为 CSV、Excel、GeoJSON 或 Shapefile
+8. **报告生成**（可选） - 使用 `ReportGenerator` 生成 Jupyter Notebook 和 HTML 报告
 
 ## 可用脚本
 
@@ -563,6 +620,12 @@ python scripts/environment_check.py
 探索数据集：
 ```bash
 python scripts/data_explorer.py
+```
+
+### 报告生成
+生成交互式 Notebook 报告：
+```bash
+python assets/examples/report_generation.py
 ```
 
 ### CLI 工具
@@ -691,6 +754,8 @@ handler.viz.plot_temporal_distribution(
 
 ## 版本历史
 
+- **v1.4.0** (2026-04-28): 新增 ReportGenerator 模块，支持数据驱动的 Jupyter Notebook 和 HTML 报告生成
+- **v1.3.0** (2026-04-27): 性能优化，修复非 ASCII 路径错误
 - **v1.2.0** (2026-04-20): 重构为标准格式，添加 references/ 和 assets/
 - **v1.1.0** (2026-04-17): 新增 Phase 5 统计可视化、CLI 增强
 - **v1.0.0** (2026-04-16): 初始版本，包含核心功能
